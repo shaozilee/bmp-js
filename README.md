@@ -2,6 +2,7 @@ bmp-js
 ======
 
 A pure javascript Bmp encoder and decoder for node.js
+support 1bit 4bit 8bit 24bit decoding and encoding with 24bit
 
 ##Install
 
