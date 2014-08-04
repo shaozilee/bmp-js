@@ -31,4 +31,4 @@ var rawData = bmp.encode(bmpData);//default no compression
 
 License
 ---
-U can use on free with [MIT License](https://github.com/shaozilee/bmp-js/blob/master/LICENSE.md)
+U can use on free with [MIT License](https://github.com/shaozilee/bmp-js/blob/master/LICENSE)
