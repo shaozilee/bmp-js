@@ -24,7 +24,7 @@ var bmpData = bmp.decode(bmpBuffer);
 ###Encode RGB
 ```js
 var bmp = require("bmp-js");
-//bmpData={data:Buffer,width:Number,height:Height}
+//bmpData={data:Buffer,rgb:Boolean=false,width:Number,height:Height} default RGBA (4 bytes per pixel in input)
 var rawData = bmp.encode(bmpData);//default no compression
 
 ```
