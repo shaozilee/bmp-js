@@ -5,14 +5,15 @@ A pure javascript Bmp encoder and decoder for node.js
 
 Supports 1bit 4bit 8bit 24bit decoding and encoding with 24bit.
 
-##Install
+## Install
 
 	$ npm install bmp-js
 
 
-How to use?
----
-###Decode BMP
+## How to use?
+
+### Decode BMP
+
 ```js
 var bmp = require("bmp-js");
 var bmpBuffer = fs.readFileSync('aa.bmp');
@@ -21,14 +22,14 @@ var bmpData = bmp.decode(bmpBuffer);
 
 ```
 
-###Encode RGB
+### Encode RGB
+
 ```js
 var bmp = require("bmp-js");
 //bmpData={data:Buffer,rgb:Boolean=false,width:Number,height:Height} default RGBA (4 bytes per pixel in input)
 var rawData = bmp.encode(bmpData);//default no compression
-
 ```
 
-License
----
+## License
+
 U can use on free with [MIT License](https://github.com/shaozilee/bmp-js/blob/master/LICENSE)
