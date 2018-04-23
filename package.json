@@ -1,6 +1,6 @@
 {
   "name": "bmp-js",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "A pure javascript BMP encoder and decoder",
   "main": "index.js",
   "repository": {
@@ -12,7 +12,9 @@
     "1bit",
     "4bit",
     "8bit",
+    "16bit",
     "24bit",
+    "32bit",
     "encoder",
     "decoder",
     "image",
