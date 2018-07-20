@@ -1,44 +1,59 @@
-bmp-js
-======
+# bmp-js
 
 A pure javascript Bmp encoder and decoder for node.js
 
 Supports all bits decoding(1,4,8,16,24,32) and encoding with 24bit.
 
-##Install
+## Install
 
-	$ npm install bmp-js
+    npm install bmp-js
 
+## How to use
 
-How to use?
----
-###Decode BMP
+### Decode BMP
+
 ```js
 var bmp = require("bmp-js");
 var bmpBuffer = fs.readFileSync('bit24.bmp');
 var bmpData = bmp.decode(bmpBuffer);
-
 ```
 
-`bmpData` has all properties includes:
+`bmpData` has all properties, including:
 
-1. fileSize,reserved,offset
+1. fileSize
+2. reserved
+3. offset
+4. headerSize
+5. width
+6. height
+7. planes
+8. bitPP
+9. compress
+10. rawSize
+11. hr
+12. vr
+13. colors
+14. importantColors
+15. palette
+16. data
+    a. This is a byte array
+    b. The bytes are ordered as follows: ABGR (alpha, blue, green, red)
+    c. 4 bytes represent 1 pixel
 
-2. headerSize,width,height,planes,bitPP,compress,rawSize,hr,vr,colors,importantColors
+### Encode RGB
 
-3. palette
-
-4. data-------byte array order by ABGR ABGR ABGR,4 bytes per pixel
-
-
-###Encode RGB
 ```js
 var bmp = require("bmp-js");
-//bmpData={data:Buffer,width:Number,height:Height}
-var rawData = bmp.encode(bmpData);//default no compression,write rawData to .bmp file
-
+var fs = require("fs");
+var bmpData = {
+    data, //Buffer
+    width, //Number
+    height //Number
+};
+var rawData = bmp.encode(bmpData); //defaults to no compression
+fs.WriteFileSync('./image.bmp', rawData.data);
 ```
 
-License
----
-U can use on free with [MIT License](https://github.com/shaozilee/bmp-js/blob/master/LICENSE)
+### License
+
+You can use for free with [MIT License](https://github.com/shaozilee/bmp-js/blob/master/LICENSE)
