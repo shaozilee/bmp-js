@@ -27,8 +27,8 @@
     "email": "shaozilee@gmail.com"
   },
   "license": "MIT",
-  "dependencies": {},
-  "devDependencies": {
+  "dependencies": {
     "@types/node": "^8.10.29"
-  }
+  },
+  "devDependencies": {}
 }
