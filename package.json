@@ -1,5 +1,5 @@
 {
-  "name": "bmp-js",
+  "name": "@vingle/bmp-js",
   "version": "0.1.0",
   "description": "A pure javascript BMP encoder and decoder",
   "main": "index.js",
