@@ -28,5 +28,5 @@ declare module "@vingle/bmp-js" {
     height: number;
   }): Buffer;
 
-  export function decode(buf: Buffer): Bitmap;
+  export function decode(buf: Buffer, toRGBA?: boolean): Bitmap;
 }
