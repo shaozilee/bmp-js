@@ -1,4 +1,4 @@
-declare module "bmp-js" {
+declare module "@vingle/bmp-js" {
   export interface Bitmap {
     pos: number;
     buffer: Buffer;
