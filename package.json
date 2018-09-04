@@ -1,6 +1,6 @@
 {
   "name": "@vingle/bmp-js",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "A pure javascript BMP encoder and decoder",
   "main": "index.js",
   "types": "index.d.ts",
