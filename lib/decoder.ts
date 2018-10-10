@@ -14,17 +14,37 @@ interface IPixel {
 
 type IPixelProcessor = (x: number, line: number) => void;
 
+const BITMAP_INFO_HEADER = 40;
+const BITMAP_V2_INFO_HEADER = 52;
+const BITMAP_V3_INFO_HEADER = 56;
+const BITMAP_V4_HEADER = 108;
+const BITMAP_V5_HEADER = 124;
+
+const VALID_TYPES = [
+  BITMAP_INFO_HEADER,
+  BITMAP_V2_INFO_HEADER,
+  BITMAP_V3_INFO_HEADER,
+  BITMAP_V4_HEADER,
+  BITMAP_V5_HEADER
+];
+
+const BI_RLE8 = 1;
+const BI_RLE4 = 2;
+const BI_BITFIELDS = 3;
+const BI_ALPHABITFIELDS = 6;
+
 class BmpDecoder {
   // Header
   public fileSize!: number;
-  public reserved!: number;
+  public reserved1!: number;
+  public reserved2!: number;
   public offset!: number;
   public headerSize!: number;
   public width!: number;
   public height!: number;
   public planes!: number;
   public bitPP!: number;
-  public compress!: number;
+  public compression!: number;
   public rawSize!: number;
   public hr!: number;
   public vr!: number;
@@ -35,9 +55,9 @@ class BmpDecoder {
   public maskRed!: number;
   public maskGreen!: number;
   public maskBlue!: number;
-  public mask0!: number;
+  public maskAlpha!: number;
 
-  public isWithAlpha: boolean;
+  public toRGBA: boolean;
 
   private data!: Buffer;
   private pos: number;
@@ -45,10 +65,21 @@ class BmpDecoder {
   private bottomUp: boolean;
   private flag: string;
 
-  constructor(buffer: Buffer, isWithAlpha = false) {
-    this.pos = 0;
+  private locRed: number;
+  private locGreen: number;
+  private locBlue: number;
+  private locAlpha: number;
+
+  private shiftRed!: (x: number) => number;
+  private shiftGreen!: (x: number) => number;
+  private shiftBlue!: (x: number) => number;
+  private shiftAlpha!: (x: number) => number;
+
+  constructor(buffer: Buffer, toRGBA = false) {
     this.buffer = buffer;
-    this.isWithAlpha = !!isWithAlpha;
+
+    this.toRGBA = !!toRGBA;
+    this.pos = 0;
     this.bottomUp = true;
     this.flag = this.buffer.toString('utf-8', 0, (this.pos += 2));
 
@@ -56,14 +87,29 @@ class BmpDecoder {
       throw new Error('Invalid BMP File');
     }
 
+    this.locRed = this.toRGBA ? 0 : 3;
+    this.locGreen = this.toRGBA ? 1 : 2;
+    this.locBlue = this.toRGBA ? 2 : 1;
+    this.locAlpha = this.toRGBA ? 3 : 0;
+
     this.parseHeader();
     this.parseRGBA();
   }
 
   public parseHeader() {
     this.fileSize = this.readUInt32LE();
-    this.reserved = this.readUInt32LE();
+    this.reserved1 = this.buffer.readUInt16LE(this.pos);
+    this.pos += 2;
+    this.reserved2 = this.buffer.readUInt16LE(this.pos);
+    this.pos += 2;
     this.offset = this.readUInt32LE();
+
+    // End of BITMAPFILEHEADER
+
+    if (VALID_TYPES.indexOf(this.headerSize) === -1) {
+      throw new Error('Unsupported BMP header size ' + this.headerSize);
+    }
+
     this.headerSize = this.readUInt32LE();
     this.width = this.readUInt32LE();
     this.height = this.buffer.readInt32LE(this.pos);
@@ -72,18 +118,63 @@ class BmpDecoder {
     this.pos += 2;
     this.bitPP = this.buffer.readUInt16LE(this.pos);
     this.pos += 2;
-    this.compress = this.readUInt32LE();
+    this.compression = this.readUInt32LE();
     this.rawSize = this.readUInt32LE();
     this.hr = this.readUInt32LE();
     this.vr = this.readUInt32LE();
     this.colors = this.readUInt32LE();
     this.importantColors = this.readUInt32LE();
 
-    if (this.bitPP === 16 && this.isWithAlpha) {
-      this.bitPP = 15;
+    // De facto defaults
+
+    if (this.bitPP === 32) {
+      this.maskAlpha = 0;
+      this.maskRed = 0x00ff0000;
+      this.maskGreen = 0x0000ff00;
+      this.maskBlue = 0x000000ff;
+    } else if (this.bitPP === 16) {
+      this.maskAlpha = 0;
+      this.maskRed = 0x7c00;
+      this.maskGreen = 0x03e0;
+      this.maskBlue = 0x001f;
     }
 
-    if (this.bitPP < 15) {
+    // End of BITMAP_INFO_HEADER
+
+    if (
+      this.headerSize > BITMAP_INFO_HEADER ||
+      this.compression === BI_BITFIELDS ||
+      this.compression === BI_ALPHABITFIELDS
+    ) {
+      this.maskRed = this.readUInt32LE();
+      this.maskGreen = this.readUInt32LE();
+      this.maskBlue = this.readUInt32LE();
+    }
+
+    // End of BITMAP_V2_INFO_HEADER
+
+    if (
+      this.headerSize > BITMAP_V2_INFO_HEADER ||
+      this.compression === BI_ALPHABITFIELDS
+    ) {
+      this.maskAlpha = this.readUInt32LE();
+    }
+
+    // End of BITMAP_V3_INFO_HEADER
+
+    if (this.headerSize > BITMAP_V3_INFO_HEADER) {
+      this.pos += BITMAP_V4_HEADER - BITMAP_V3_INFO_HEADER;
+    }
+
+    // End of BITMAP_V4_HEADER
+
+    if (this.headerSize > BITMAP_V4_HEADER) {
+      this.pos += BITMAP_V5_HEADER - BITMAP_V4_HEADER;
+    }
+
+    // End of BITMAP_V5_HEADER
+
+    if (this.bitPP <= 8 || this.colors > 0) {
       const len = this.colors === 0 ? 1 << this.bitPP : this.colors;
       this.palette = new Array(len);
 
@@ -102,10 +193,72 @@ class BmpDecoder {
       }
     }
 
+    // End of color table
+
     if (this.height < 0) {
       this.height *= -1;
       this.bottomUp = false;
     }
+
+    // We have these:
+    //
+    // const sample = 0101 0101 0101 0101
+    // const mask   = 0111 1100 0000 0000
+    // 256        === 0000 0001 0000 0000
+    //
+    // We want to take the sample and turn it into an 8-bit value.
+    //
+    // 1. We extract the last bit of the mask:
+    //
+    // 0000 0100 0000 0000
+    //       ^
+    //
+    // Like so:
+    //
+    // const a = ~mask =    1000 0011 1111 1111
+    // const b = a + 1 =    1000 0100 0000 0000
+    // const c = b & mask = 0000 0100 0000 0000
+    //
+    // 2. We shift it to the right and extract the bit before the first:
+    //
+    // 0000 0000 0010 0000
+    //             ^
+    //
+    // Like so:
+    //
+    // const d = mask / c = 0000 0000 0001 1111
+    // const e = mask + 1 = 0000 0000 0010 0000
+    //
+    // 3. We apply the mask and the two values above to a sample:
+    //
+    // const f = sample & mask = 0101 0100 0000 0000
+    // const g = f / c =         0000 0000 0001 0101
+    // const h = 256 / e =       0000 0000 0000 0100
+    // const i = g * h =         0000 0000 1010 1000
+    //                                     ^^^^ ^
+    //
+    // Voila, we have extracted a sample and "stretched" it to 8 bits. For samples
+    // which are already 8-bit, h === 1 and g === i.
+    const maskRedR = (~this.maskRed + 1) & this.maskRed;
+    const maskGreenR = (~this.maskGreen + 1) & this.maskGreen;
+    const maskBlueR = (~this.maskBlue + 1) & this.maskBlue;
+    const maskAlphaR = (~this.maskAlpha + 1) & this.maskAlpha;
+    const shiftedMaskRedL = this.maskRed / maskRedR + 1;
+    const shiftedMaskGreenL = this.maskGreen / maskGreenR + 1;
+    const shiftedMaskBlueL = this.maskBlue / maskBlueR + 1;
+    const shiftedMaskAlphaL = this.maskAlpha / maskAlphaR + 1;
+
+    this.shiftRed = (x: number) =>
+      (((x & this.maskRed) / maskRedR) * 0x100) / shiftedMaskRedL;
+    this.shiftGreen = (x: number) =>
+      (((x & this.maskGreen) / maskGreenR) * 0x100) / shiftedMaskGreenL;
+    this.shiftBlue = (x: number) =>
+      (((x & this.maskBlue) / maskBlueR) * 0x100) / shiftedMaskBlueL;
+    this.shiftAlpha =
+      this.maskAlpha !== 0
+        ? (x: number) =>
+            (((x & this.maskAlpha) / maskAlphaR) * 0x100) / shiftedMaskAlphaL
+        : () => 255;
   }
 
   public parseRGBA() {
@@ -120,9 +273,6 @@ class BmpDecoder {
         break;
       case 8:
         this.bit8();
-        break;
-      case 15:
-        this.bit15();
         break;
       case 16:
         this.bit16();
@@ -159,8 +309,7 @@ class BmpDecoder {
   }
 
   public bit4() {
-    //RLE-4
-    if (this.compress == 2) {
+    if (this.compression == BI_RLE4) {
       this.data.fill(0xff);
 
       let low_nibble = false; //for all count of pixel
@@ -256,8 +405,7 @@ class BmpDecoder {
   }
 
   public bit8() {
-    //RLE-8
-    if (this.compress == 1) {
+    if (this.compression == BI_RLE8) {
       this.data.fill(0xff);
 
       let lines = this.bottomUp ? this.height - 1 : 0;
@@ -328,72 +476,18 @@ class BmpDecoder {
     }
   }
 
-  public bit15() {
-    const padding = this.width % 3;
-    const _11111 = parseInt('11111', 2);
-    const _1_5 = _11111;
-
-    this.scanImage(padding, this.width, (x, line) => {
-      const B = this.buffer.readUInt16LE(this.pos);
-      this.pos += 2;
-
-      const blue = (((B & _1_5) / _1_5) * 255) | 0;
-      const green = ((((B >> 5) & _1_5) / _1_5) * 255) | 0;
-      const red = ((((B >> 10) & _1_5) / _1_5) * 255) | 0;
-      const alpha = B >> 15 ? 0xff : 0x00;
-
-      const location = line * this.width * 4 + x * 4;
-
-      this.data[location] = alpha;
-      this.data[location + 1] = blue;
-      this.data[location + 2] = green;
-      this.data[location + 3] = red;
-    });
-  }
-
   public bit16() {
     const padding = (this.width % 2) * 2;
-    //default xrgb555
-    this.maskRed = 0x7c00;
-    this.maskGreen = 0x3e0;
-    this.maskBlue = 0x1f;
-    this.mask0 = 0;
-
-    if (this.compress == 3) {
-      this.maskRed = this.readUInt32LE();
-      this.maskGreen = this.readUInt32LE();
-      this.maskBlue = this.readUInt32LE();
-      this.mask0 = this.readUInt32LE();
-    }
-
-    const ns = [0, 0, 0];
-
-    for (let i = 0; i < 16; i++) {
-      if ((this.maskRed >> i) & 0x01) ns[0]++;
-      if ((this.maskGreen >> i) & 0x01) ns[1]++;
-      if ((this.maskBlue >> i) & 0x01) ns[2]++;
-    }
-
-    ns[1] += ns[0];
-    ns[2] += ns[1];
-    ns[0] = 8 - ns[0];
-    ns[1] -= 8;
-    ns[2] -= 8;
 
     this.scanImage(padding, this.width, (x, line) => {
-      const B = this.buffer.readUInt16LE(this.pos);
+      const loc = line * this.width * 4 + x * 4;
+      const px = this.buffer.readUInt16LE(this.pos);
       this.pos += 2;
 
-      const blue = (B & this.maskBlue) << ns[0];
-      const green = (B & this.maskGreen) >> ns[1];
-      const red = (B & this.maskRed) >> ns[2];
-
-      const location = line * this.width * 4 + x * 4;
-
-      this.data[location] = 0;
-      this.data[location + 1] = blue;
-      this.data[location + 2] = green;
-      this.data[location + 3] = red;
+      this.data[loc + this.locRed] = this.shiftRed(px);
+      this.data[loc + this.locGreen] = this.shiftGreen(px);
+      this.data[loc + this.locBlue] = this.shiftBlue(px);
+      this.data[loc + this.locAlpha] = this.shiftAlpha(px);
     });
   }
 
@@ -401,55 +495,28 @@ class BmpDecoder {
     const padding = this.width % 4;
 
     this.scanImage(padding, this.width, (x, line) => {
+      const loc = line * this.width * 4 + x * 4;
       const blue = this.buffer.readUInt8(this.pos++);
       const green = this.buffer.readUInt8(this.pos++);
       const red = this.buffer.readUInt8(this.pos++);
 
-      const location = line * this.width * 4 + x * 4;
-
-      this.data[location] = 0;
-      this.data[location + 1] = blue;
-      this.data[location + 2] = green;
-      this.data[location + 3] = red;
+      this.data[loc + this.locRed] = red;
+      this.data[loc + this.locGreen] = green;
+      this.data[loc + this.locBlue] = blue;
     });
   }
 
   public bit32() {
-    // BI_BITFIELDS
-    if (this.compress == 3) {
-      this.maskRed = this.readUInt32LE();
-      this.maskGreen = this.readUInt32LE();
-      this.maskBlue = this.readUInt32LE();
-      this.mask0 = this.readUInt32LE();
+    this.scanImage(0, this.width, (x, line) => {
+      const loc = line * this.width * 4 + x * 4;
+      const px = this.buffer.readUInt32LE(this.pos);
+      this.pos += 4;
 
-      this.scanImage(0, this.width, (x: number, line: number) => {
-        const alpha = this.buffer.readUInt8(this.pos++);
-        const blue = this.buffer.readUInt8(this.pos++);
-        const green = this.buffer.readUInt8(this.pos++);
-        const red = this.buffer.readUInt8(this.pos++);
-
-        const location = line * this.width * 4 + x * 4;
-
-        this.data[location] = alpha;
-        this.data[location + 1] = blue;
-        this.data[location + 2] = green;
-        this.data[location + 3] = red;
-      });
-    } else {
-      this.scanImage(0, this.width, (x, line) => {
-        const blue = this.buffer.readUInt8(this.pos++);
-        const green = this.buffer.readUInt8(this.pos++);
-        const red = this.buffer.readUInt8(this.pos++);
-        const alpha = this.buffer.readUInt8(this.pos++);
-
-        const location = line * this.width * 4 + x * 4;
-
-        this.data[location] = alpha;
-        this.data[location + 1] = blue;
-        this.data[location + 2] = green;
-        this.data[location + 3] = red;
-      });
-    }
+      this.data[loc + this.locRed] = this.shiftRed(px);
+      this.data[loc + this.locGreen] = this.shiftGreen(px);
+      this.data[loc + this.locBlue] = this.shiftBlue(px);
+      this.data[loc + this.locAlpha] = this.shiftAlpha(px);
+    });
   }
 
   public getData() {
