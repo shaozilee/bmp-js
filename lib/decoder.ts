@@ -109,7 +109,7 @@ class BmpDecoder {
   }
 
   public parseRGBA() {
-    this.data = new Buffer(this.width * this.height * 4);
+    this.data = Buffer.alloc(this.width * this.height * 4);
 
     switch (this.bitPP) {
       case 1:

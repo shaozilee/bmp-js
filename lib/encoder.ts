@@ -55,7 +55,7 @@ class BmpEncoder {
     this.colors = 0;
     this.importantColors = 0;
 
-    this.data = new Buffer(this.offset + this.rgbSize);
+    this.data = Buffer.alloc(this.offset + this.rgbSize);
     this.pos = 0;
   }
 
