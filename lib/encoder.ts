@@ -13,25 +13,25 @@ interface IImage {
 }
 
 class BmpEncoder {
-  private fileSize: number;
-  private reserved: number;
-  private offset: number;
-  private width: number;
-  private flag: string;
-  private height: number;
-  private planes: number;
-  private bitPP: number;
-  private compress: number;
-  private hr: number;
-  private vr: number;
-  private colors: number;
-  private importantColors: number;
+  private readonly fileSize: number;
+  private readonly reserved: number;
+  private readonly offset: number;
+  private readonly width: number;
+  private readonly flag: string;
+  private readonly height: number;
+  private readonly planes: number;
+  private readonly bitPP: number;
+  private readonly compress: number;
+  private readonly hr: number;
+  private readonly vr: number;
+  private readonly colors: number;
+  private readonly importantColors: number;
 
-  private headerInfoSize: number;
-  private extraBytes: number;
-  private rgbSize: number;
-  private data: Buffer;
-  private buffer: Buffer;
+  private readonly headerInfoSize: number;
+  private readonly extraBytes: number;
+  private readonly rgbSize: number;
+  private readonly data: Buffer;
+  private readonly buffer: Buffer;
   private pos: number;
 
   constructor(imgData: IImage) {
@@ -39,10 +39,11 @@ class BmpEncoder {
     this.width = imgData.width;
     this.height = imgData.height;
     this.extraBytes = this.width % 4;
-    this.rgbSize = this.height * (3 * this.width + this.extraBytes);
+    this.rgbSize = this.height * (this.width * 3 + this.extraBytes);
     this.headerInfoSize = 40;
 
-    /******************header***********************/
+    // Header
+
     this.flag = 'BM';
     this.reserved = 0;
     this.offset = 54;
@@ -85,7 +86,7 @@ class BmpEncoder {
     this.writeUInt32LE(this.colors);
     this.writeUInt32LE(this.importantColors);
 
-    const rowBytes = 3 * this.width + this.extraBytes;
+    const rowBytes = this.extraBytes + this.width * 3;
     let i = 0;
 
     for (let y = 0; y < this.height; y++) {
@@ -113,7 +114,7 @@ class BmpEncoder {
   }
 }
 
-export default function(imgData: IImage) {
+export default (imgData: IImage) => {
   const encoder = new BmpEncoder(imgData);
   const data = encoder.encode();
 
@@ -122,4 +123,4 @@ export default function(imgData: IImage) {
     width: imgData.width,
     height: imgData.height
   };
-}
+};

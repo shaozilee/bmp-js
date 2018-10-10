@@ -1,10 +1,3 @@
-/**
- * @author shaozilee
- *
- * Bmp format decoder,support 1bit 4bit 8bit 24bit bmp
- *
- */
-
 interface IPixel {
   red: number;
   green: number;
@@ -30,8 +23,8 @@ const VALID_TYPES = [
 
 const BI_RLE8 = 1;
 const BI_RLE4 = 2;
-const BI_BITFIELDS = 3;
-const BI_ALPHABITFIELDS = 6;
+const BI_BIT_FIELDS = 3;
+const BI_ALPHA_BIT_FIELDS = 6;
 
 class BmpDecoder {
   // Header
@@ -61,14 +54,14 @@ class BmpDecoder {
 
   private data!: Buffer;
   private pos: number;
-  private buffer: Buffer;
   private bottomUp: boolean;
-  private flag: string;
+  private readonly buffer: Buffer;
+  private readonly flag: string;
 
-  private locRed: number;
-  private locGreen: number;
-  private locBlue: number;
-  private locAlpha: number;
+  private readonly locRed: number;
+  private readonly locGreen: number;
+  private readonly locBlue: number;
+  private readonly locAlpha: number;
 
   private shiftRed!: (x: number) => number;
   private shiftGreen!: (x: number) => number;
@@ -83,7 +76,7 @@ class BmpDecoder {
     this.bottomUp = true;
     this.flag = this.buffer.toString('utf-8', 0, (this.pos += 2));
 
-    if (this.flag != 'BM') {
+    if (this.flag !== 'BM') {
       throw new Error('Invalid BMP File');
     }
 
@@ -104,10 +97,10 @@ class BmpDecoder {
     this.pos += 2;
     this.offset = this.readUInt32LE();
 
-    // End of BITMAPFILEHEADER
+    // End of BITMAP_FILE_HEADER
 
     if (VALID_TYPES.indexOf(this.headerSize) === -1) {
-      throw new Error('Unsupported BMP header size ' + this.headerSize);
+      throw new Error(`Unsupported BMP header size ${this.headerSize}`);
     }
 
     this.headerSize = this.readUInt32LE();
@@ -143,8 +136,8 @@ class BmpDecoder {
 
     if (
       this.headerSize > BITMAP_INFO_HEADER ||
-      this.compression === BI_BITFIELDS ||
-      this.compression === BI_ALPHABITFIELDS
+      this.compression === BI_BIT_FIELDS ||
+      this.compression === BI_ALPHA_BIT_FIELDS
     ) {
       this.maskRed = this.readUInt32LE();
       this.maskGreen = this.readUInt32LE();
@@ -155,7 +148,7 @@ class BmpDecoder {
 
     if (
       this.headerSize > BITMAP_V2_INFO_HEADER ||
-      this.compression === BI_ALPHABITFIELDS
+      this.compression === BI_ALPHA_BIT_FIELDS
     ) {
       this.maskAlpha = this.readUInt32LE();
     }
@@ -185,10 +178,10 @@ class BmpDecoder {
         const quad = this.buffer.readUInt8(this.pos++);
 
         this.palette[i] = {
-          red: red,
-          green: green,
-          blue: blue,
-          quad: quad
+          red,
+          green,
+          blue,
+          quad
         };
       }
     }
@@ -248,16 +241,15 @@ class BmpDecoder {
     const shiftedMaskBlueL = this.maskBlue / maskBlueR + 1;
     const shiftedMaskAlphaL = this.maskAlpha / maskAlphaR + 1;
 
-    this.shiftRed = (x: number) =>
+    this.shiftRed = x =>
       (((x & this.maskRed) / maskRedR) * 0x100) / shiftedMaskRedL;
-    this.shiftGreen = (x: number) =>
+    this.shiftGreen = x =>
       (((x & this.maskGreen) / maskGreenR) * 0x100) / shiftedMaskGreenL;
-    this.shiftBlue = (x: number) =>
+    this.shiftBlue = x =>
       (((x & this.maskBlue) / maskBlueR) * 0x100) / shiftedMaskBlueL;
     this.shiftAlpha =
       this.maskAlpha !== 0
-        ? (x: number) =>
-            (((x & this.maskAlpha) / maskAlphaR) * 0x100) / shiftedMaskAlphaL
+        ? x => (((x & this.maskAlpha) / maskAlphaR) * 0x100) / shiftedMaskAlphaL
         : () => 255;
   }
 
@@ -288,7 +280,7 @@ class BmpDecoder {
   public bit1() {
     const xLen = Math.ceil(this.width / 8);
     const mode = xLen % 4;
-    const padding = mode != 0 ? 4 - mode : 0;
+    const padding = mode !== 0 ? 4 - mode : 0;
 
     this.scanImage(padding, xLen, (x, line) => {
       const b = this.buffer.readUInt8(this.pos++);
@@ -309,10 +301,10 @@ class BmpDecoder {
   }
 
   public bit4() {
-    if (this.compression == BI_RLE4) {
+    if (this.compression === BI_RLE4) {
       this.data.fill(0xff);
 
-      let low_nibble = false; //for all count of pixel
+      let lowNibble = false; //for all count of pixel
       let lines = this.bottomUp ? this.height - 1 : 0;
       let location = 0;
 
@@ -321,18 +313,22 @@ class BmpDecoder {
         const b = this.buffer.readUInt8(this.pos++);
 
         //absolute mode
-        if (a == 0) {
-          if (b == 0) {
+        if (a === 0) {
+          if (b === 0) {
             //line end
             lines += this.bottomUp ? -1 : 1;
             location = lines * this.width * 4;
-            low_nibble = false;
+            lowNibble = false;
 
             continue;
-          } else if (b == 1) {
+          }
+
+          if (b === 1) {
             // image end
             break;
-          } else if (b == 2) {
+          }
+
+          if (b === 2) {
             // offset x,y
             const x = this.buffer.readUInt8(this.pos++);
             const y = this.buffer.readUInt8(this.pos++);
@@ -345,17 +341,17 @@ class BmpDecoder {
             for (let i = 0; i < b; i++) {
               location = this.setPixelData(
                 location,
-                low_nibble ? c & 0x0f : (c & 0xf0) >> 4
+                lowNibble ? c & 0x0f : (c & 0xf0) >> 4
               );
 
               if (i & 1 && i + 1 < b) {
                 c = this.buffer.readUInt8(this.pos++);
               }
 
-              low_nibble = !low_nibble;
+              lowNibble = !lowNibble;
             }
 
-            if ((((b + 1) >> 1) & 1) == 1) {
+            if ((((b + 1) >> 1) & 1) === 1) {
               this.pos++;
             }
           }
@@ -364,16 +360,16 @@ class BmpDecoder {
           for (let i = 0; i < a; i++) {
             location = this.setPixelData(
               location,
-              low_nibble ? b & 0x0f : (b & 0xf0) >> 4
+              lowNibble ? b & 0x0f : (b & 0xf0) >> 4
             );
-            low_nibble = !low_nibble;
+            lowNibble = !lowNibble;
           }
         }
       }
     } else {
-      const xlen = Math.ceil(this.width / 2);
-      const mode = xlen % 4;
-      const padding = mode != 0 ? 4 - mode : 0;
+      const xLen = Math.ceil(this.width / 2);
+      const mode = xLen % 4;
+      const padding = mode !== 0 ? 4 - mode : 0;
 
       this.scanImage(padding, this.width, (x, line) => {
         const b = this.buffer.readUInt8(this.pos++);
@@ -405,7 +401,7 @@ class BmpDecoder {
   }
 
   public bit8() {
-    if (this.compression == BI_RLE8) {
+    if (this.compression === BI_RLE8) {
       this.data.fill(0xff);
 
       let lines = this.bottomUp ? this.height - 1 : 0;
@@ -416,16 +412,20 @@ class BmpDecoder {
         const b = this.buffer.readUInt8(this.pos++);
 
         //absolute mode
-        if (a == 0) {
-          if (b == 0) {
+        if (a === 0) {
+          if (b === 0) {
             //line end
             lines += this.bottomUp ? -1 : 1;
             location = lines * this.width * 4;
             continue;
-          } else if (b == 1) {
+          }
+
+          if (b === 1) {
             //image end
             break;
-          } else if (b == 2) {
+          }
+
+          if (b === 2) {
             //offset x,y
             const x = this.buffer.readUInt8(this.pos++);
             const y = this.buffer.readUInt8(this.pos++);
@@ -439,7 +439,7 @@ class BmpDecoder {
             }
 
             // @ts-ignore
-            const shouldIncrement = b & (1 == 1);
+            const shouldIncrement = b & (1 === 1);
             if (shouldIncrement) {
               this.pos++;
             }
@@ -453,7 +453,7 @@ class BmpDecoder {
       }
     } else {
       const mode = this.width % 4;
-      const padding = mode != 0 ? 4 - mode : 0;
+      const padding = mode !== 0 ? 4 - mode : 0;
 
       this.scanImage(padding, this.width, (x, line) => {
         const b = this.buffer.readUInt8(this.pos++);
@@ -550,18 +550,15 @@ class BmpDecoder {
   }
 
   private setPixelData(location: number, rgbIndex: number) {
-    const rgb = this.palette[rgbIndex];
-    this.data[location] = 0;
-    this.data[location + 1] = rgb.blue;
-    this.data[location + 2] = rgb.green;
-    this.data[location + 3] = rgb.red;
-    location += 4;
+    const { blue, green, red } = this.palette[rgbIndex];
 
-    return location;
+    this.data[location] = 0;
+    this.data[location + 1] = blue;
+    this.data[location + 2] = green;
+    this.data[location + 3] = red;
+
+    return location + 4;
   }
 }
 
-export default function(bmpData: Buffer) {
-  const decoder = new BmpDecoder(bmpData);
-  return decoder;
-}
+export default (bmpData: Buffer) => new BmpDecoder(bmpData);
