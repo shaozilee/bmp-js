@@ -26,15 +26,20 @@
     "email": "shaozilee@gmail.com"
   },
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "@types/node": "^10.11.7"
+  },
   "devDependencies": {
     "husky": "^1.1.1",
     "lint-staged": "^7.3.0",
     "prettier": "^1.14.3",
+    "tslint": "^5.11.0",
     "typescript": "^3.1.2"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "test": "node test/test.js",
+    "lint": "tslint -p . --format stylish"
   },
   "prettier": {
     "singleQuote": true
