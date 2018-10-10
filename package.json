@@ -28,5 +28,9 @@
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {
+    "typescript": "^3.1.2"
+  },
+  "scripts": {
+    "build": "tsc"
   }
 }
