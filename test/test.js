@@ -2,19 +2,19 @@ var fs = require('fs');
 
 var coder = require('../dist/index').default;
 var bmps = [
-  './test/bit1',
-  './test/bit4',
-  './test/bit4_RLE',
-  './test/bit8',
-  './test/bit8_RLE',
-  './test/bit16_565',
-  './test/bit16_a444',
-  './test/bit16_a555',
-  './test/bit16_x444',
-  './test/bit16_x555',
-  './test/bit24',
-  './test/bit32',
-  './test/bit32_alpha'
+  './bit1',
+  './bit4',
+  './bit4_RLE',
+  './bit8',
+  './bit8_RLE',
+  './bit16_565',
+  './bit16_a444',
+  './bit16_a555',
+  './bit16_x444',
+  './bit16_x555',
+  './bit24',
+  './bit32',
+  './bit32_alpha'
 ];
 
 console.log('test bmp decoding and encoding...');

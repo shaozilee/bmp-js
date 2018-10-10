@@ -138,24 +138,20 @@ class BmpDecoder {
   public bit1() {
     const xLen = Math.ceil(this.width / 8);
     const mode = xLen % 4;
-
-    // is this line even used?
     const padding = mode != 0 ? 4 - mode : 0;
 
-    this.scanImage(padding, (x, line) => {
+    this.scanImage(padding, xLen, (x, line) => {
       const b = this.buffer.readUInt8(this.pos++);
       const location = line * this.width * 4 + x * 8 * 4;
 
       for (let i = 0; i < 8; i++) {
         if (x * 8 + i < this.width) {
           const rgb = this.palette[(b >> (7 - i)) & 0x1];
-
           this.data[location + i * 4] = 0;
           this.data[location + i * 4 + 1] = rgb.blue;
           this.data[location + i * 4 + 2] = rgb.green;
           this.data[location + i * 4 + 3] = rgb.red;
         } else {
-          // Throw error?
           break;
         }
       }
@@ -230,7 +226,7 @@ class BmpDecoder {
       const mode = xlen % 4;
       const padding = mode != 0 ? 4 - mode : 0;
 
-      this.scanImage(padding, (x, line) => {
+      this.scanImage(padding, this.width, (x, line) => {
         const b = this.buffer.readUInt8(this.pos++);
         const location = line * this.width * 4 + x * 2 * 4;
 
@@ -245,7 +241,8 @@ class BmpDecoder {
         this.data[location + 3] = rgb.red;
 
         if (x * 2 + 1 >= this.width) {
-          throw new Error('Something');
+          // throw new Error('Something');
+          return false;
         }
 
         rgb = this.palette[after];
@@ -310,7 +307,7 @@ class BmpDecoder {
       const mode = this.width % 4;
       const padding = mode != 0 ? 4 - mode : 0;
 
-      this.scanImage(padding, (x, line) => {
+      this.scanImage(padding, this.width, (x, line) => {
         const b = this.buffer.readUInt8(this.pos++);
         const location = line * this.width * 4 + x * 4;
 
@@ -336,7 +333,7 @@ class BmpDecoder {
     const _11111 = parseInt('11111', 2);
     const _1_5 = _11111;
 
-    this.scanImage(padding, (x, line) => {
+    this.scanImage(padding, this.width, (x, line) => {
       const B = this.buffer.readUInt16LE(this.pos);
       this.pos += 2;
 
@@ -383,7 +380,7 @@ class BmpDecoder {
     ns[1] -= 8;
     ns[2] -= 8;
 
-    this.scanImage(padding, (x, line) => {
+    this.scanImage(padding, this.width, (x, line) => {
       const B = this.buffer.readUInt16LE(this.pos);
       this.pos += 2;
 
@@ -403,7 +400,7 @@ class BmpDecoder {
   public bit24() {
     const padding = this.width % 4;
 
-    this.scanImage(padding, (x, line) => {
+    this.scanImage(padding, this.width, (x, line) => {
       const blue = this.buffer.readUInt8(this.pos++);
       const green = this.buffer.readUInt8(this.pos++);
       const red = this.buffer.readUInt8(this.pos++);
@@ -425,7 +422,7 @@ class BmpDecoder {
       this.maskBlue = this.readUInt32LE();
       this.mask0 = this.readUInt32LE();
 
-      this.scanImage(0, (x: number, line: number) => {
+      this.scanImage(0, this.width, (x: number, line: number) => {
         const alpha = this.buffer.readUInt8(this.pos++);
         const blue = this.buffer.readUInt8(this.pos++);
         const green = this.buffer.readUInt8(this.pos++);
@@ -439,7 +436,7 @@ class BmpDecoder {
         this.data[location + 3] = red;
       });
     } else {
-      this.scanImage(0, (x, line) => {
+      this.scanImage(0, this.width, (x, line) => {
         const blue = this.buffer.readUInt8(this.pos++);
         const green = this.buffer.readUInt8(this.pos++);
         const red = this.buffer.readUInt8(this.pos++);
@@ -459,12 +456,20 @@ class BmpDecoder {
     return this.data;
   }
 
-  private scanImage(padding = 0, processPixel: IPixelProcessor) {
+  private scanImage(
+    padding = 0,
+    width = this.width,
+    processPixel: IPixelProcessor
+  ) {
     for (let y = this.height - 1; y >= 0; y--) {
       const line = this.bottomUp ? y : this.height - 1 - y;
 
-      for (let x = 0; x < this.width; x++) {
-        processPixel.call(this, x, line);
+      for (let x = 0; x < width; x++) {
+        const result = processPixel.call(this, x, line);
+
+        if (result === false) {
+          return;
+        }
       }
 
       this.pos += padding;
