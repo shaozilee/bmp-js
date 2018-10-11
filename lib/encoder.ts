@@ -7,13 +7,6 @@ export interface IImage {
   data: Buffer;
 }
 
-interface IPixel {
-  red: number;
-  green: number;
-  blue: number;
-  quad: number;
-}
-
 type IPixelProcessor = (p: number, i: number) => number;
 
 class BmpEncoder {
@@ -55,6 +48,11 @@ class BmpEncoder {
         this.offset = 54;
         this.bitPP = 32;
         break;
+      case 16:
+        this.rowModifier = 2;
+        this.offset = 54;
+        this.bitPP = 16;
+        break;
       default:
         this.rowModifier = 3;
         this.offset = 54;
@@ -84,6 +82,9 @@ class BmpEncoder {
     this.writeHeader();
 
     switch (this.bitPP) {
+      case 16:
+        this.write16();
+        break;
       case 32:
         this.write32();
         break;
@@ -140,6 +141,23 @@ class BmpEncoder {
     });
   }
 
+  private write16() {
+    this.writeImage((p, index) => {
+      let i = index + 1;
+
+      const b = this.buffer[i++] / 8; // b
+      const g = this.buffer[i++] / 8; // g
+      const r = this.buffer[i++] / 8; // r
+
+      const color = (r << 10) | (g << 5) | b;
+
+      this.data[p + 1] = (color & 0xff00) >> 8;
+      this.data[p] = color & 0x00ff;
+
+      return i;
+    });
+  }
+
   private write24() {
     this.writeImage((p, index) => {
       let i = index + 1;
@@ -167,7 +185,7 @@ class BmpEncoder {
 
   private writeImage(writePixel: IPixelProcessor) {
     const rowBytes = this.extraBytes + this.width * this.rowModifier;
-    console.log(rowBytes, this.pos);
+
     let i = 0;
 
     for (let y = 0; y < this.height; y++) {
@@ -177,7 +195,7 @@ class BmpEncoder {
         const p = this.pos + y * rowBytes + x * this.rowModifier;
 
         i = writePixel.call(this, p, i);
-        console.log(this.data[p]);
+        // console.log(this.data[p]);
         line += this.data[p]; // writes 0-25
 
         // 5 so wont work for 1 bit. 8 pixels stored in 0-255
