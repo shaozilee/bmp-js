@@ -1,3 +1,5 @@
+import maskColor from './mask-color';
+
 interface IPixel {
   red: number;
   green: number;
@@ -193,66 +195,17 @@ export class BmpDecoder {
       this.bottomUp = false;
     }
 
-    // We have these:
-    //
-    // const sample = 0101 0101 0101 0101
-    // const mask   = 0111 1100 0000 0000
-    // 256        === 0000 0001 0000 0000
-    //
-    // We want to take the sample and turn it into an 8-bit value.
-    //
-    // 1. We extract the last bit of the mask:
-    //
-    // 0000 0100 0000 0000
-    //       ^
-    //
-    // Like so:
-    //
-    // const a = ~mask =    1000 0011 1111 1111
-    // const b = a + 1 =    1000 0100 0000 0000
-    // const c = b & mask = 0000 0100 0000 0000
-    //
-    // 2. We shift it to the right and extract the bit before the first:
-    //
-    // 0000 0000 0010 0000
-    //             ^
-    //
-    // Like so:
-    //
-    // const d = mask / c = 0000 0000 0001 1111
-    // const e = mask + 1 = 0000 0000 0010 0000
-    //
-    // 3. We apply the mask and the two values above to a sample:
-    //
-    // const f = sample & mask = 0101 0100 0000 0000
-    // const g = f / c =         0000 0000 0001 0101
-    // const h = 256 / e =       0000 0000 0000 0100
-    // const i = g * h =         0000 0000 1010 1000
-    //                                     ^^^^ ^
-    //
-    // Voila, we have extracted a sample and "stretched" it to 8 bits. For samples
-    // which are already 8-bit, h === 1 and g === i.
-    const maskRedR = (~this.maskRed + 1) & this.maskRed;
-    const maskGreenR = (~this.maskGreen + 1) & this.maskGreen;
-    const maskBlueR = (~this.maskBlue + 1) & this.maskBlue;
-    const maskAlphaR = (~this.maskAlpha + 1) & this.maskAlpha;
-    const shiftedMaskRedL = this.maskRed / maskRedR + 1;
-    const shiftedMaskGreenL = this.maskGreen / maskGreenR + 1;
-    const shiftedMaskBlueL = this.maskBlue / maskBlueR + 1;
-    const shiftedMaskAlphaL = this.maskAlpha / maskAlphaR + 1;
+    const coloShift = maskColor(
+      this.maskRed,
+      this.maskGreen,
+      this.maskBlue,
+      this.maskAlpha
+    );
 
-    this.shiftRed = x =>
-      (((x & this.maskRed) / maskRedR) * 0x100) / shiftedMaskRedL;
-    this.shiftGreen = x =>
-      (((x & this.maskGreen) / maskGreenR) * 0x100) / shiftedMaskGreenL;
-    this.shiftBlue = x =>
-      (((x & this.maskBlue) / maskBlueR) * 0x100) / shiftedMaskBlueL;
-    this.shiftAlpha =
-      this.maskAlpha !== 0
-        ? x => (((x & this.maskAlpha) / maskAlphaR) * 0x100) / shiftedMaskAlphaL
-        : () => 255;
-
-    console.log(this.fileSize, this.buffer.length);
+    this.shiftRed = coloShift.shiftRed;
+    this.shiftGreen = coloShift.shiftGreen;
+    this.shiftBlue = coloShift.shiftBlue;
+    this.shiftAlpha = coloShift.shiftAlpha;
   }
 
   public parseRGBA() {
