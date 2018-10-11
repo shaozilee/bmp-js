@@ -1,8 +1,9 @@
 {
-  "name": "bmp-js",
-  "version": "0.1.0",
+  "name": "@vingle/bmp-js",
+  "version": "0.2.5",
   "description": "A pure javascript BMP encoder and decoder",
   "main": "index.js",
+  "types": "index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/shaozilee/bmp-js"

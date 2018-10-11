@@ -1,0 +1,11 @@
+language: node_js
+node_js:
+- '8'
+deploy:
+  provider: npm
+  email: mooyoul@gmail.com
+  api_key:
+    secure: QDM/TnW8VNuHDXb51N/cLZEb/wbykXSpQkCPREswUpHamu1HqXzfmdAQv+2vSmod5yXUvX5p+Yua8OrC78aZa9J7yvPYErVN32dk2sSbtO8r44cCzB0tuALgyt2zqTFv97AZd3tg1DYAZ3sKSRzfp//tJCB3E9sDcm+pfnfH/tiqo0VFfJjGMZy5zaxS1fMhw9Ba+JGyQduLgDokJZVvMEBOCbN0t7yZo8MFfRr+wUP1MCFwCNODf5EBV1gNwhYaQVYRpwldBOOZ+uZFrZ36ob+5E6M13QH2M+Z2U3jZJt6x1kBg/YlUQ6ig2MQA//HA/H4PJTeTeOG6iCCAt4YZ83fLB3hs3J435h0GAJ42XyJXj+FsFMN6PT6KUaYhpeIDgsbLjIRVYVB9NMJdYdtdVI/J3ZTighMBkwLRdE4tBDkFDsHsSGuoI9IKTwVMf/fFeAhwpQdX6iqz2ZgWORqzeYQQk2aUrjGO9goLPKyIdWs3cTFJy01PYrLcP1jdy5Mjgk8XIS2Emt7FGw1wJKXlsVtZbUh4ywC3tWvqYtBdCmimHgJJY2Ev5qpNfC7avy/npLUQnqPjLgFUod4O4/nUyjBX5cw03QBmPbY7f1px1wHYAJmygVe/vDr+Lq+pawAWJ+GQGam/5YDOfXD3c3UR9BxsmY/4F5rH0DIwaRTTyFw=
+  on:
+    tags: true
+    repo: balmbees/bmp-js
