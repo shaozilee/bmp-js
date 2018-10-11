@@ -1,7 +1,7 @@
 {
-  "name": "@vingle/bmp-js",
+  "name": "bmp-ts",
   "version": "0.2.5",
-  "description": "A pure javascript BMP encoder and decoder",
+  "description": "A pure typescript BMP encoder and decoder",
   "main": "index.js",
   "types": "index.d.ts",
   "repository": {
@@ -21,6 +21,9 @@
     "image",
     "javascript",
     "js"
+  ],
+  "files": [
+    "dist/"
   ],
   "author": {
     "name": "shaozilee",

@@ -209,7 +209,7 @@ export class BmpDecoder {
   }
 
   public parseRGBA() {
-    this.data = Buffer.alloc(this.width * this.height * 4);
+    this.data = Buffer.alloc(this.width * this.height * 4, 0xff);
 
     switch (this.bitPP) {
       case 1:
@@ -256,10 +256,10 @@ export class BmpDecoder {
           const rgb = this.palette[(b >> (7 - i)) & 0x1];
           lineStr = `${lineStr}${(b >> (7 - i)) & 0x1}`;
 
-          this.data[location + i * 4] = 0;
-          this.data[location + i * 4 + 1] = rgb.blue;
-          this.data[location + i * 4 + 2] = rgb.green;
-          this.data[location + i * 4 + 3] = rgb.red;
+          this.data[location + i * this.locAlpha] = 0xff;
+          this.data[location + i * 4 + this.locBlue] = rgb.blue;
+          this.data[location + i * 4 + this.locGreen] = rgb.green;
+          this.data[location + i * 4 + this.locRed] = rgb.red;
         } else {
           break;
         }
@@ -470,6 +470,7 @@ export class BmpDecoder {
       this.data[loc + this.locRed] = red;
       this.data[loc + this.locGreen] = green;
       this.data[loc + this.locBlue] = blue;
+      this.data[loc + this.locAlpha] = 0xff;
     });
   }
 
@@ -519,10 +520,10 @@ export class BmpDecoder {
   private setPixelData(location: number, rgbIndex: number) {
     const { blue, green, red } = this.palette[rgbIndex];
 
-    this.data[location] = 0;
-    this.data[location + 1] = blue;
-    this.data[location + 2] = green;
-    this.data[location + 3] = red;
+    this.data[location + this.locAlpha] = 0xff;
+    this.data[location + 1 + this.locBlue] = blue;
+    this.data[location + 2 + this.locGreen] = green;
+    this.data[location + 3 + this.locRed] = red;
 
     return location + 4;
   }
