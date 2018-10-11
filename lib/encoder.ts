@@ -1,9 +1,17 @@
 // TODO: support 1, 4, 8, 16, and 32 bit encoding
 
 export interface IImage {
+  bitPP: number;
   height: number;
   width: number;
   data: Buffer;
+}
+
+interface IPixel {
+  red: number;
+  green: number;
+  blue: number;
+  quad: number;
 }
 
 type IPixelProcessor = (p: number, i: number) => number;
@@ -34,10 +42,14 @@ class BmpEncoder {
     this.buffer = imgData.data;
     this.width = imgData.width;
     this.height = imgData.height;
-    this.extraBytes = this.width % 4;
-    this.rgbSize = this.height * (this.width * 3 + this.extraBytes);
     this.headerInfoSize = 40;
 
+    this.extraBytes = this.width % 4;
+
+    if (imgData.bitPP === 24) {
+      this.rgbSize = this.height * (this.width * 3 + this.extraBytes);
+      this.bitPP = 24;
+    }
     // Header
 
     this.flag = 'BM';
@@ -45,7 +57,6 @@ class BmpEncoder {
     this.offset = 54;
     this.fileSize = this.rgbSize + this.offset;
     this.planes = 1;
-    this.bitPP = 24;
     this.compress = 0;
     this.hr = 0;
     this.vr = 0;
@@ -59,6 +70,17 @@ class BmpEncoder {
   public encode() {
     this.pos = 0;
 
+    this.writeHeader();
+
+    switch (this.bitPP) {
+      default:
+        this.write24();
+    }
+
+    return this.data;
+  }
+
+  private writeHeader() {
     this.data.write(this.flag, this.pos, 2);
     this.pos += 2;
 
@@ -70,8 +92,10 @@ class BmpEncoder {
 
     this.data.writeInt32LE(-this.height, this.pos);
     this.pos += 4;
+
     this.data.writeUInt16LE(this.planes, this.pos);
     this.pos += 2;
+
     this.data.writeUInt16LE(this.bitPP, this.pos);
     this.pos += 2;
 
@@ -81,7 +105,9 @@ class BmpEncoder {
     this.writeUInt32LE(this.vr);
     this.writeUInt32LE(this.colors);
     this.writeUInt32LE(this.importantColors);
+  }
 
+  private write24() {
     this.writeImage((p, index) => {
       let i = index + 1;
 
@@ -91,8 +117,6 @@ class BmpEncoder {
 
       return i;
     });
-
-    return this.data;
   }
 
   private writeImage(writePixel: IPixelProcessor) {

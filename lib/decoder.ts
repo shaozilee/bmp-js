@@ -98,12 +98,12 @@ export class BmpDecoder {
     this.offset = this.readUInt32LE();
 
     // End of BITMAP_FILE_HEADER
+    this.headerSize = this.readUInt32LE();
 
     if (VALID_TYPES.indexOf(this.headerSize) === -1) {
       throw new Error(`Unsupported BMP header size ${this.headerSize}`);
     }
 
-    this.headerSize = this.readUInt32LE();
     this.width = this.readUInt32LE();
     this.height = this.buffer.readInt32LE(this.pos);
     this.pos += 4;
@@ -278,17 +278,31 @@ export class BmpDecoder {
   }
 
   public bit1() {
+    const calcBrightness = (pixel: IPixel) =>
+      pixel.red * 0.2126 + pixel.green * 0.7152 + pixel.blue * 0.0722;
     const xLen = Math.ceil(this.width / 8);
     const mode = xLen % 4;
     const padding = mode !== 0 ? 4 - mode : 0;
 
+    let lastLine: number | undefined;
+    let lineStr = '';
+
     this.scanImage(padding, xLen, (x, line) => {
+      if (line !== lastLine) {
+        console.log(lineStr);
+        lineStr = '';
+        lastLine = line;
+      }
+
       const b = this.buffer.readUInt8(this.pos++);
+      // console.log('\n', 'pixel value', b, x, line);
       const location = line * this.width * 4 + x * 8 * 4;
 
       for (let i = 0; i < 8; i++) {
         if (x * 8 + i < this.width) {
           const rgb = this.palette[(b >> (7 - i)) & 0x1];
+          lineStr = `${lineStr}${(b >> (7 - i)) & 0x1}`;
+
           this.data[location + i * 4] = 0;
           this.data[location + i * 4 + 1] = rgb.blue;
           this.data[location + i * 4 + 2] = rgb.green;
