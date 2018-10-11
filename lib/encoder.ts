@@ -1,11 +1,3 @@
-/**
- * @author shaozilee
- *
- * BMP format encoder,encode 24bit BMP
- * Not support quality compression
- *
- */
-
 export interface IImage {
   height: number;
   width: number;
