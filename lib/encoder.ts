@@ -12,6 +12,8 @@ interface IImage {
   data: Buffer;
 }
 
+type IPixelProcessor = (p: number, i: number) => number;
+
 class BmpEncoder {
   private readonly fileSize: number;
   private readonly reserved: number;
@@ -86,17 +88,27 @@ class BmpEncoder {
     this.writeUInt32LE(this.colors);
     this.writeUInt32LE(this.importantColors);
 
+    this.writeImage((p: number, index: number) => {
+      let i = index + 1;
+
+      this.data[p] = this.buffer[i++]; //b
+      this.data[p + 1] = this.buffer[i++]; //g
+      this.data[p + 2] = this.buffer[i++]; //r
+
+      return i;
+    });
+
+    return this.data;
+  }
+
+  private writeImage(writePixel: IPixelProcessor) {
     const rowBytes = this.extraBytes + this.width * 3;
     let i = 0;
 
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
         const p = this.pos + y * rowBytes + x * 3;
-
-        i++; //a
-        this.data[p] = this.buffer[i++]; //b
-        this.data[p + 1] = this.buffer[i++]; //g
-        this.data[p + 2] = this.buffer[i++]; //r
+        i = writePixel.call(this, p, i);
       }
 
       if (this.extraBytes > 0) {
@@ -104,8 +116,6 @@ class BmpEncoder {
         this.data.fill(0, fillOffset, fillOffset + this.extraBytes);
       }
     }
-
-    return this.data;
   }
 
   private writeUInt32LE(value: number) {
