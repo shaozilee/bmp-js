@@ -6,7 +6,7 @@
  *
  */
 
-interface IImage {
+export interface IImage {
   height: number;
   width: number;
   data: Buffer;

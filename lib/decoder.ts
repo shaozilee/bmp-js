@@ -26,7 +26,7 @@ const BI_RLE4 = 2;
 const BI_BIT_FIELDS = 3;
 const BI_ALPHA_BIT_FIELDS = 6;
 
-class BmpDecoder {
+export class BmpDecoder {
   // Header
   public fileSize!: number;
   public reserved1!: number;
