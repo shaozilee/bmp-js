@@ -2,7 +2,7 @@ var fs = require('fs');
 
 var coder = require('../dist/index').default;
 var bmps = [
-  // './bit1'
+  './bit1'
   // './bit4',
   // './bit4_RLE',
   // './bit8',
@@ -14,7 +14,7 @@ var bmps = [
   // './bit16_x555',
   // './bit24',
   // './bit32',
-  './bit32_alpha'
+  // './bit32_alpha'
 ];
 
 console.log('test bmp decoding and encoding...');
@@ -31,7 +31,7 @@ for (let b = 0; b < bmps.length; b++) {
   console.log('fileSize:', decoder.fileSize);
 
   //encode with 24bit
-  decoder.bitPP = 32;
+  decoder.bitPP = 1;
   const encodeData = coder.encode(decoder);
   fs.writeFileSync('test' + '_out.bmp', encodeData.data);
 }

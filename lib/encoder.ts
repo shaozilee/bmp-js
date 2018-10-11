@@ -53,6 +53,11 @@ class BmpEncoder {
         this.offset = 54;
         this.bitPP = 16;
         break;
+      case 1:
+        this.rowModifier = 1 / 8;
+        this.offset = 54;
+        this.bitPP = 1;
+        break;
       default:
         this.rowModifier = 3;
         this.offset = 54;
@@ -74,6 +79,7 @@ class BmpEncoder {
 
     this.data = Buffer.alloc(this.fileSize);
     this.pos = 0;
+    console.log(this.fileSize);
   }
 
   public encode() {
@@ -82,6 +88,9 @@ class BmpEncoder {
     this.writeHeader();
 
     switch (this.bitPP) {
+      case 1:
+        this.write1();
+        break;
       case 16:
         this.write16();
         break;
@@ -124,21 +133,34 @@ class BmpEncoder {
 
   private write1() {
     this.writeImage((p, index) => {
-      let i = index + 1;
+      let i = index;
 
+      const a = this.buffer[i++];
       const b = this.buffer[i++];
       const g = this.buffer[i++];
       const r = this.buffer[i++];
       const brightness = r * 0.2126 + g * 0.7152 + b * 0.0722;
 
-      if (brightness > 127) {
-        this.data[p] = 0;
-      } else {
-        this.data[p] = 1;
-      }
+      const newPixel = brightness >= 127 ? 0 : 1;
 
+      this.data[p] = (this.data[p] << 1) | newPixel;
+
+      console.log(this.data[p]);
       return i;
     });
+    // for (let y = 0; y < this.height; y++) {
+    //   for (let x = 0; x < this.width; x++) {
+    //     let i = this.pos + y * this.width + x;
+
+    //     console.log(i);
+    //     const b = this.buffer[i++];
+    //     const g = this.buffer[i++];
+    //     const r = this.buffer[i++];
+    //     const a = this.buffer[i++];
+    //     console.log({ r, g, b, a });
+    //     // const brightness = r * 0.2126 + g * 0.7152 + b * 0.0722;
+    //   }
+    // }
   }
 
   private write16() {
@@ -148,6 +170,7 @@ class BmpEncoder {
       const b = this.buffer[i++] / 8; // b
       const g = this.buffer[i++] / 8; // g
       const r = this.buffer[i++] / 8; // r
+      console.log({ r, g, b });
 
       const color = (r << 10) | (g << 5) | b;
 
@@ -192,16 +215,18 @@ class BmpEncoder {
       let line = '';
 
       for (let x = 0; x < this.width; x++) {
-        const p = this.pos + y * rowBytes + x * this.rowModifier;
+        const p = Math.floor(this.pos + y * rowBytes + x * this.rowModifier);
 
         i = writePixel.call(this, p, i);
         // console.log(this.data[p]);
-        line += this.data[p]; // writes 0-25
+        if (x % 7 === 0) {
+          line += this.data[p].toString(2).padStart(8, '0'); // writes 0-25
+        }
 
         // 5 so wont work for 1 bit. 8 pixels stored in 0-255
       }
 
-      // console.log(line);
+      console.log(line);
 
       if (this.extraBytes > 0) {
         const fillOffset = this.pos + y * rowBytes + this.width * 3;
