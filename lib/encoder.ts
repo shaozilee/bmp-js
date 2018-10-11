@@ -88,7 +88,7 @@ class BmpEncoder {
     this.writeUInt32LE(this.colors);
     this.writeUInt32LE(this.importantColors);
 
-    this.writeImage((p: number, index: number) => {
+    this.writeImage((p, index) => {
       let i = index + 1;
 
       this.data[p] = this.buffer[i++]; //b
