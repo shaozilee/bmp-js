@@ -1,3 +1,5 @@
+// TODO: support 1, 4, 8, 16, and 32 bit encoding
+
 export interface IImage {
   height: number;
   width: number;
