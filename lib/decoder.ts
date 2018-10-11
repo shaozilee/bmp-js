@@ -251,6 +251,8 @@ export class BmpDecoder {
       this.maskAlpha !== 0
         ? x => (((x & this.maskAlpha) / maskAlphaR) * 0x100) / shiftedMaskAlphaL
         : () => 255;
+
+    console.log(this.fileSize, this.buffer.length);
   }
 
   public parseRGBA() {
@@ -278,8 +280,6 @@ export class BmpDecoder {
   }
 
   public bit1() {
-    const calcBrightness = (pixel: IPixel) =>
-      pixel.red * 0.2126 + pixel.green * 0.7152 + pixel.blue * 0.0722;
     const xLen = Math.ceil(this.width / 8);
     const mode = xLen % 4;
     const padding = mode !== 0 ? 4 - mode : 0;
@@ -289,7 +289,7 @@ export class BmpDecoder {
 
     this.scanImage(padding, xLen, (x, line) => {
       if (line !== lastLine) {
-        console.log(lineStr);
+        // console.log(lineStr);
         lineStr = '';
         lastLine = line;
       }

@@ -36,6 +36,7 @@ class BmpEncoder {
   private readonly rgbSize: number;
   private readonly data: Buffer;
   private readonly buffer: Buffer;
+  private rowModifier: number;
   private pos: number;
 
   constructor(imgData: IImage) {
@@ -46,15 +47,25 @@ class BmpEncoder {
 
     this.extraBytes = this.width % 4;
 
-    if (imgData.bitPP === 24) {
-      this.rgbSize = this.height * (this.width * 3 + this.extraBytes);
-      this.bitPP = 24;
-    }
     // Header
+
+    switch (imgData.bitPP) {
+      case 32:
+        this.rowModifier = 4;
+        this.offset = 54;
+        this.bitPP = 32;
+        break;
+      default:
+        this.rowModifier = 3;
+        this.offset = 54;
+        this.bitPP = 24;
+    }
+
+    this.rgbSize =
+      this.height * (this.width * this.rowModifier + this.extraBytes);
 
     this.flag = 'BM';
     this.reserved = 0;
-    this.offset = 54;
     this.fileSize = this.rgbSize + this.offset;
     this.planes = 1;
     this.compress = 0;
@@ -63,7 +74,7 @@ class BmpEncoder {
     this.colors = 0;
     this.importantColors = 0;
 
-    this.data = Buffer.alloc(this.offset + this.rgbSize);
+    this.data = Buffer.alloc(this.fileSize);
     this.pos = 0;
   }
 
@@ -73,6 +84,9 @@ class BmpEncoder {
     this.writeHeader();
 
     switch (this.bitPP) {
+      case 32:
+        this.write32();
+        break;
       default:
         this.write24();
     }
@@ -107,6 +121,25 @@ class BmpEncoder {
     this.writeUInt32LE(this.importantColors);
   }
 
+  private write1() {
+    this.writeImage((p, index) => {
+      let i = index + 1;
+
+      const b = this.buffer[i++];
+      const g = this.buffer[i++];
+      const r = this.buffer[i++];
+      const brightness = r * 0.2126 + g * 0.7152 + b * 0.0722;
+
+      if (brightness > 127) {
+        this.data[p] = 0;
+      } else {
+        this.data[p] = 1;
+      }
+
+      return i;
+    });
+  }
+
   private write24() {
     this.writeImage((p, index) => {
       let i = index + 1;
@@ -119,15 +152,38 @@ class BmpEncoder {
     });
   }
 
+  private write32() {
+    this.writeImage((p, index) => {
+      let i = index;
+
+      this.data[p + 3] = this.buffer[i++]; // a
+      this.data[p] = this.buffer[i++]; // b
+      this.data[p + 1] = this.buffer[i++]; // g
+      this.data[p + 2] = this.buffer[i++]; // r
+
+      return i;
+    });
+  }
+
   private writeImage(writePixel: IPixelProcessor) {
-    const rowBytes = this.extraBytes + this.width * 3;
+    const rowBytes = this.extraBytes + this.width * this.rowModifier;
+    console.log(rowBytes, this.pos);
     let i = 0;
 
     for (let y = 0; y < this.height; y++) {
+      let line = '';
+
       for (let x = 0; x < this.width; x++) {
-        const p = this.pos + y * rowBytes + x * 3;
+        const p = this.pos + y * rowBytes + x * this.rowModifier;
+
         i = writePixel.call(this, p, i);
+        console.log(this.data[p]);
+        line += this.data[p]; // writes 0-25
+
+        // 5 so wont work for 1 bit. 8 pixels stored in 0-255
       }
+
+      // console.log(line);
 
       if (this.extraBytes > 0) {
         const fillOffset = this.pos + y * rowBytes + this.width * 3;
