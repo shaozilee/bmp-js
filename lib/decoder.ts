@@ -320,10 +320,8 @@ export class BmpDecoder implements IImage {
         const b = this.buffer.readUInt8(this.pos++);
         const location = line * this.width * 4 + x * 2 * 4;
 
-        const before = b >> 4;
-        const after = b & 0x0f;
-
-        let rgb = this.palette[before];
+        const first4 = b >> 4;
+        let rgb = this.palette[first4];
 
         this.data[location] = 0;
         this.data[location + 1] = rgb.blue;
@@ -335,7 +333,8 @@ export class BmpDecoder implements IImage {
           return false;
         }
 
-        rgb = this.palette[after];
+        const last4 = b & 0x0f;
+        rgb = this.palette[last4];
 
         this.data[location + 4] = 0;
         this.data[location + 4 + 1] = rgb.blue;

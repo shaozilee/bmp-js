@@ -1,6 +1,6 @@
-import { HeaderTypes, IImage, IColor } from './types';
+import { HeaderTypes, IColor, IImage } from './types';
 
-// TODO: support 4 and 8 bit encoding
+// TODO: support 8 bit encoding
 
 type IColorProcessor = (p: number, i: number, x: number, y: number) => number;
 
@@ -9,7 +9,9 @@ function createInteger(numbers: number[]) {
 }
 
 function createColor(color: IColor): number {
-  return (color.quad << 24) | (color.red << 16) | (color.red << 8) | color.blue;
+  return (
+    (color.quad << 24) | (color.red << 16) | (color.green << 8) | color.blue
+  );
 }
 
 export class BmpEncoder implements IImage {
@@ -151,9 +153,8 @@ export class BmpEncoder implements IImage {
   }
 
   private bit1() {
-    if (this.palette.length) {
-      this.writeUInt32LE(createColor(this.palette[0])); // Black
-      this.writeUInt32LE(createColor(this.palette[1])); // White
+    if (this.palette.length && this.colors === 2) {
+      this.initColors(1);
     } else {
       this.writeUInt32LE(0x00ffffff); // Black
       this.writeUInt32LE(0x00000000); // White
@@ -187,7 +188,34 @@ export class BmpEncoder implements IImage {
   }
 
   private bit4() {
-    console.log(this);
+    const colors = this.initColors(4);
+
+    let integerPair: number[] = [];
+
+    this.writeImage((p, index, x) => {
+      let i = index;
+
+      const colorInt = createColor({
+        quad: this.buffer[i++],
+        blue: this.buffer[i++],
+        green: this.buffer[i++],
+        red: this.buffer[i++]
+      });
+      const colorExists = colors.findIndex(c => c === colorInt);
+
+      if (colorExists !== -1) {
+        integerPair.push(colorExists);
+      } else {
+        integerPair.push(0x00);
+      }
+
+      if ((x + 1) % 2 === 0) {
+        this.data[p] = (integerPair[0] << 4) | integerPair[1];
+        integerPair = [];
+      }
+
+      return i;
+    });
   }
 
   private bit16() {
@@ -200,8 +228,8 @@ export class BmpEncoder implements IImage {
 
       const color = (r << 10) | (g << 5) | b;
 
-      this.data[p + 1] = (color & 0xff00) >> 8;
       this.data[p] = color & 0x00ff;
+      this.data[p + 1] = (color & 0xff00) >> 8;
 
       return i;
     });
@@ -246,6 +274,25 @@ export class BmpEncoder implements IImage {
         i = writePixel.call(this, p, i, x, y);
       }
     }
+  }
+
+  private initColors(bit: number) {
+    const colors: number[] = [];
+
+    if (this.palette.length && this.colors > 0) {
+      for (let i = 0; i < this.colors; i++) {
+        const rootColor = createColor(this.palette[i]);
+        this.writeUInt32LE(rootColor);
+        colors.push(rootColor);
+      }
+    } else {
+      throw new Error(
+        `To encode ${bit}-bit BMPs a pallette is needed. Please choose up to ${bit *
+          2} colors. Colors must be 32-bit integers.`
+      );
+    }
+
+    return colors;
   }
 
   private writeUInt32LE(value: number) {
