@@ -1,5 +1,6 @@
 import maskColor from './mask-color';
 import { Compression, HeaderTypes, IColor, IImage } from './types';
+import { hexy } from 'hexy';
 
 type IColorProcessor = (x: number, line: number) => void;
 
@@ -63,6 +64,8 @@ export class BmpDecoder implements IImage {
 
     this.parseHeader();
     this.parseRGBA();
+    console.log(this.offset);
+    console.log(hexy(this.buffer));
   }
 
   public parseHeader() {
@@ -164,6 +167,8 @@ export class BmpDecoder implements IImage {
           quad
         };
       }
+
+      console.log(this.palette);
     }
 
     // End of color table

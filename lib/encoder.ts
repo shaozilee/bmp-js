@@ -1,4 +1,4 @@
-import { HeaderTypes, IImage } from './types';
+import { HeaderTypes, IImage, IColor } from './types';
 
 // TODO: support 4 and 8 bit encoding
 
@@ -6,6 +6,10 @@ type IColorProcessor = (p: number, i: number, x: number, y: number) => number;
 
 function createInteger(numbers: number[]) {
   return numbers.reduce((final, n) => (final << 1) | n, 0);
+}
+
+function createColor(color: IColor): number {
+  return (color.quad << 24) | (color.red << 16) | (color.red << 8) | color.blue;
 }
 
 export class BmpEncoder implements IImage {
@@ -26,6 +30,7 @@ export class BmpEncoder implements IImage {
   public readonly rawSize: number;
   public readonly headerSize: number;
   public readonly data: Buffer;
+  public readonly palette: IColor[];
 
   private readonly extraBytes: number;
   private readonly buffer: Buffer;
@@ -56,6 +61,11 @@ export class BmpEncoder implements IImage {
         this.offset = 62;
         this.bitPP = 1;
         break;
+      case 4:
+        this.bytesInColor = 1 / 2;
+        this.offset = 86;
+        this.bitPP = 4;
+        break;
       default:
         this.bytesInColor = 3;
         this.offset = 54;
@@ -79,6 +89,7 @@ export class BmpEncoder implements IImage {
     this.vr = imgData.vr || 0;
     this.colors = imgData.colors || 0;
     this.importantColors = imgData.importantColors || 0;
+    this.palette = imgData.palette || [];
 
     this.data = Buffer.alloc(this.fileSize);
     this.pos = 0;
@@ -94,6 +105,9 @@ export class BmpEncoder implements IImage {
     switch (this.bitPP) {
       case 1:
         this.bit1();
+        break;
+      case 4:
+        this.bit4();
         break;
       case 16:
         this.bit16();
@@ -137,8 +151,13 @@ export class BmpEncoder implements IImage {
   }
 
   private bit1() {
-    this.writeUInt32LE(0x00ffffff); // Black
-    this.writeUInt32LE(0x00000000); // White
+    if (this.palette.length) {
+      this.writeUInt32LE(createColor(this.palette[0])); // Black
+      this.writeUInt32LE(createColor(this.palette[1])); // White
+    } else {
+      this.writeUInt32LE(0x00ffffff); // Black
+      this.writeUInt32LE(0x00000000); // White
+    }
 
     this.pos += 1; // ?
 
@@ -165,6 +184,10 @@ export class BmpEncoder implements IImage {
 
       return i;
     });
+  }
+
+  private bit4() {
+    console.log(this);
   }
 
   private bit16() {
