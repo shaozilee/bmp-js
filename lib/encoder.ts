@@ -1,7 +1,5 @@
 import { HeaderTypes, IColor, IImage } from './types';
 
-// TODO: support 8 bit encoding
-
 type IColorProcessor = (p: number, i: number, x: number, y: number) => number;
 
 function createInteger(numbers: number[]) {
@@ -36,7 +34,7 @@ export class BmpEncoder implements IImage {
 
   private readonly extraBytes: number;
   private readonly buffer: Buffer;
-  private bytesInColor: number;
+  private readonly bytesInColor: number;
   private pos: number;
 
   constructor(imgData: IImage) {
@@ -46,6 +44,19 @@ export class BmpEncoder implements IImage {
     this.headerSize = HeaderTypes.BITMAP_INFO_HEADER;
 
     // Header
+    this.flag = 'BM';
+    this.reserved1 = imgData.reserved1 || 0;
+    this.reserved2 = imgData.reserved2 || 0;
+    this.planes = 1;
+    this.compress = 0;
+    this.hr = imgData.hr || 0;
+    this.vr = imgData.vr || 0;
+    this.colors = Math.min(
+      2 ** (imgData.bitPP - 1),
+      imgData.colors || Infinity
+    );
+    this.importantColors = imgData.importantColors || 0;
+    this.palette = imgData.palette || [];
 
     switch (imgData.bitPP) {
       case 32:
@@ -65,8 +76,13 @@ export class BmpEncoder implements IImage {
         break;
       case 4:
         this.bytesInColor = 1 / 2;
-        this.offset = 86;
+        this.offset = this.colors * 4 + 54;
         this.bitPP = 4;
+        break;
+      case 8:
+        this.bytesInColor = 1;
+        this.offset = this.colors * 4 + 54;
+        this.bitPP = 8;
         break;
       default:
         this.bytesInColor = 3;
@@ -81,18 +97,7 @@ export class BmpEncoder implements IImage {
     // Why 2?
     this.rawSize = this.height * rowBytes * 4 + 2;
 
-    this.flag = 'BM';
-    this.reserved1 = imgData.reserved1 || 0;
-    this.reserved2 = imgData.reserved2 || 0;
     this.fileSize = this.rawSize + this.offset;
-    this.planes = 1;
-    this.compress = 0;
-    this.hr = imgData.hr || 0;
-    this.vr = imgData.vr || 0;
-    this.colors = imgData.colors || 0;
-    this.importantColors = imgData.importantColors || 0;
-    this.palette = imgData.palette || [];
-
     this.data = Buffer.alloc(this.fileSize);
     this.pos = 0;
 
@@ -110,6 +115,9 @@ export class BmpEncoder implements IImage {
         break;
       case 4:
         this.bit4();
+        break;
+      case 8:
+        this.bit8();
         break;
       case 16:
         this.bit16();
@@ -206,12 +214,36 @@ export class BmpEncoder implements IImage {
       if (colorExists !== -1) {
         integerPair.push(colorExists);
       } else {
-        integerPair.push(0x00);
+        integerPair.push(0);
       }
 
       if ((x + 1) % 2 === 0) {
         this.data[p] = (integerPair[0] << 4) | integerPair[1];
         integerPair = [];
+      }
+
+      return i;
+    });
+  }
+
+  private bit8() {
+    const colors = this.initColors(8);
+
+    this.writeImage((p, index) => {
+      let i = index;
+
+      const colorInt = createColor({
+        quad: this.buffer[i++],
+        blue: this.buffer[i++],
+        green: this.buffer[i++],
+        red: this.buffer[i++]
+      });
+      const colorExists = colors.findIndex(c => c === colorInt);
+
+      if (colorExists !== -1) {
+        this.data[p] = colorExists;
+      } else {
+        this.data[p] = 0;
       }
 
       return i;
@@ -279,7 +311,7 @@ export class BmpEncoder implements IImage {
   private initColors(bit: number) {
     const colors: number[] = [];
 
-    if (this.palette.length && this.colors > 0) {
+    if (this.palette.length) {
       for (let i = 0; i < this.colors; i++) {
         const rootColor = createColor(this.palette[i]);
         this.writeUInt32LE(rootColor);
@@ -287,8 +319,9 @@ export class BmpEncoder implements IImage {
       }
     } else {
       throw new Error(
-        `To encode ${bit}-bit BMPs a pallette is needed. Please choose up to ${bit *
-          2} colors. Colors must be 32-bit integers.`
+        `To encode ${bit}-bit BMPs a pallette is needed. Please choose up to ${
+          this.colors
+        } colors. Colors must be 32-bit integers.`
       );
     }
 
