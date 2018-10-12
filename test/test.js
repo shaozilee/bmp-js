@@ -3,6 +3,7 @@ var fs = require('fs');
 var coder = require('../dist/index').default;
 var bmps = [
   './bit1'
+  // './Anti-Cosmo_&_2d_Prof._Calamitous_(Jimmy_Timmy_Power_Hour_2)3'
   // './bit4',
   // './bit4_RLE',
   // './bit8',

@@ -1,93 +1,89 @@
-// TODO: support 1, 4, 8, 16, and 32 bit encoding
+import { HeaderTypes, IImage } from './types';
 
-export interface IImage {
-  bitPP: number;
-  height: number;
-  width: number;
-  data: Buffer;
-}
-// @ts-ignore
-import { hexy } from 'hexy';
+// TODO: support 4 and 8 bit encoding
 
-type IPixelProcessor = (p: number, i: number, x: number, y: number) => number;
+type IColorProcessor = (p: number, i: number, x: number, y: number) => number;
 
-function createInteger(nums: number[]) {
-  return nums.reduce((final, n) => (final << 1) | n, 0);
+function createInteger(numbers: number[]) {
+  return numbers.reduce((final, n) => (final << 1) | n, 0);
 }
 
-class BmpEncoder {
-  private readonly fileSize: number;
-  private readonly reserved: number;
-  private readonly offset: number;
-  private readonly width: number;
-  private readonly flag: string;
-  private readonly height: number;
-  private readonly planes: number;
-  private readonly bitPP: number;
-  private readonly compress: number;
-  private readonly hr: number;
-  private readonly vr: number;
-  private readonly colors: number;
-  private readonly importantColors: number;
+export class BmpEncoder implements IImage {
+  public readonly fileSize: number;
+  public readonly reserved1: number;
+  public readonly reserved2: number;
+  public readonly offset: number;
+  public readonly width: number;
+  public readonly flag: string;
+  public readonly height: number;
+  public readonly planes: number;
+  public readonly bitPP: number;
+  public readonly compress: number;
+  public readonly hr: number;
+  public readonly vr: number;
+  public readonly colors: number;
+  public readonly importantColors: number;
+  public readonly rawSize: number;
+  public readonly headerSize: number;
+  public readonly data: Buffer;
 
-  private readonly headerInfoSize: number;
   private readonly extraBytes: number;
-  private readonly rgbSize: number;
-  private readonly data: Buffer;
   private readonly buffer: Buffer;
-  private rowModifier: number;
+  private bytesInColor: number;
   private pos: number;
 
   constructor(imgData: IImage) {
     this.buffer = imgData.data;
     this.width = imgData.width;
     this.height = imgData.height;
-    this.headerInfoSize = 40;
-
-    this.extraBytes = this.width % 4;
+    this.headerSize = HeaderTypes.BITMAP_INFO_HEADER;
 
     // Header
 
     switch (imgData.bitPP) {
       case 32:
-        this.rowModifier = 4;
+        this.bytesInColor = 4;
         this.offset = 54;
         this.bitPP = 32;
         break;
       case 16:
-        this.rowModifier = 2;
+        this.bytesInColor = 2;
         this.offset = 54;
         this.bitPP = 16;
         break;
       case 1:
-        this.rowModifier = 1 / 8;
+        this.bytesInColor = 1 / 8;
         this.offset = 62;
         this.bitPP = 1;
-        const rowWidth = (this.width * this.bitPP) / 32;
-        this.extraBytes = (Math.ceil(rowWidth) - rowWidth) * 4;
         break;
       default:
-        this.rowModifier = 3;
+        this.bytesInColor = 3;
         this.offset = 54;
         this.bitPP = 24;
     }
 
+    const rowWidth = (this.width * this.bitPP) / 32;
+    const rowBytes = Math.ceil(rowWidth);
+
+    this.extraBytes = (rowBytes - rowWidth) * 4;
     // Why 2?
-    this.rgbSize =
-      this.height * Math.ceil((this.width * this.bitPP) / 32) * 4 + 2;
+    this.rawSize = this.height * rowBytes * 4 + 2;
 
     this.flag = 'BM';
-    this.reserved = 0;
-    this.fileSize = this.rgbSize + this.offset;
+    this.reserved1 = imgData.reserved1 || 0;
+    this.reserved2 = imgData.reserved2 || 0;
+    this.fileSize = this.rawSize + this.offset;
     this.planes = 1;
     this.compress = 0;
     this.hr = imgData.hr || 0;
     this.vr = imgData.vr || 0;
-    this.colors = 0;
-    this.importantColors = 0;
+    this.colors = imgData.colors || 0;
+    this.importantColors = imgData.importantColors || 0;
 
     this.data = Buffer.alloc(this.fileSize);
     this.pos = 0;
+
+    this.encode();
   }
 
   public encode() {
@@ -97,20 +93,17 @@ class BmpEncoder {
 
     switch (this.bitPP) {
       case 1:
-        this.write1();
+        this.bit1();
         break;
       case 16:
-        this.write16();
+        this.bit16();
         break;
       case 32:
-        this.write32();
+        this.bit32();
         break;
       default:
-        this.write24();
+        this.bit24();
     }
-
-    console.log(hexy(this.data));
-    return this.data;
   }
 
   private writeHeader() {
@@ -118,13 +111,16 @@ class BmpEncoder {
     this.pos += 2;
 
     this.writeUInt32LE(this.fileSize);
-    this.writeUInt32LE(this.reserved);
-    this.writeUInt32LE(this.offset);
-    this.writeUInt32LE(this.headerInfoSize);
-    this.writeUInt32LE(this.width);
 
-    this.data.writeInt32LE(this.height, this.pos);
-    this.pos += 4;
+    this.buffer.writeUInt16LE(this.reserved1, 0);
+    this.pos += 2;
+    this.buffer.writeUInt16LE(this.reserved2, 2);
+    this.pos += 2;
+
+    this.writeUInt32LE(this.offset);
+    this.writeUInt32LE(this.headerSize);
+    this.writeUInt32LE(this.width);
+    this.writeUInt32LE(this.height);
 
     this.data.writeUInt16LE(this.planes, this.pos);
     this.pos += 2;
@@ -133,14 +129,14 @@ class BmpEncoder {
     this.pos += 2;
 
     this.writeUInt32LE(this.compress);
-    this.writeUInt32LE(this.rgbSize);
+    this.writeUInt32LE(this.rawSize);
     this.writeUInt32LE(this.hr);
     this.writeUInt32LE(this.vr);
     this.writeUInt32LE(this.colors);
     this.writeUInt32LE(this.importantColors);
   }
 
-  private write1() {
+  private bit1() {
     this.writeUInt32LE(0x00ffffff); // Black
     this.writeUInt32LE(0x00000000); // White
 
@@ -171,7 +167,7 @@ class BmpEncoder {
     });
   }
 
-  private write16() {
+  private bit16() {
     this.writeImage((p, index) => {
       let i = index + 1;
 
@@ -188,7 +184,7 @@ class BmpEncoder {
     });
   }
 
-  private write24() {
+  private bit24() {
     this.writeImage((p, index) => {
       let i = index + 1;
 
@@ -200,7 +196,7 @@ class BmpEncoder {
     });
   }
 
-  private write32() {
+  private bit32() {
     this.writeImage((p, index) => {
       let i = index;
 
@@ -213,24 +209,19 @@ class BmpEncoder {
     });
   }
 
-  private writeImage(writePixel: IPixelProcessor) {
-    const rowBytes = this.extraBytes + this.width * this.rowModifier;
+  private writeImage(writePixel: IColorProcessor) {
+    const rowBytes = this.extraBytes + this.width * this.bytesInColor;
 
     let i = 0;
 
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
         const p = Math.floor(
-          this.pos + (this.height - 1 - y) * rowBytes + x * this.rowModifier
+          this.pos + (this.height - 1 - y) * rowBytes + x * this.bytesInColor
         );
 
         i = writePixel.call(this, p, i, x, y);
       }
-
-      // if (this.extraBytes > 0) {
-      //   const fillOffset = this.pos + y * rowBytes + this.width * 3;
-      //   this.data.fill(0, fillOffset, fillOffset + this.extraBytes);
-      // }
     }
   }
 
@@ -240,13 +231,4 @@ class BmpEncoder {
   }
 }
 
-export default (imgData: IImage) => {
-  const encoder = new BmpEncoder(imgData);
-  const data = encoder.encode();
-
-  return {
-    data,
-    width: imgData.width,
-    height: imgData.height
-  };
-};
+export default (imgData: IImage) => new BmpEncoder(imgData);

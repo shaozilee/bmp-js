@@ -1,37 +1,11 @@
 import maskColor from './mask-color';
+import { Compression, HeaderTypes, IColor, IImage } from './types';
 
-interface IPixel {
-  red: number;
-  green: number;
-  blue: number;
-  quad: number;
-}
-// @ts-ignore
-import { hexy } from 'hexy';
+type IColorProcessor = (x: number, line: number) => void;
 
-type IPixelProcessor = (x: number, line: number) => void;
-
-const BITMAP_INFO_HEADER = 40;
-const BITMAP_V2_INFO_HEADER = 52;
-const BITMAP_V3_INFO_HEADER = 56;
-const BITMAP_V4_HEADER = 108;
-const BITMAP_V5_HEADER = 124;
-
-const VALID_TYPES = [
-  BITMAP_INFO_HEADER,
-  BITMAP_V2_INFO_HEADER,
-  BITMAP_V3_INFO_HEADER,
-  BITMAP_V4_HEADER,
-  BITMAP_V5_HEADER
-];
-
-const BI_RLE8 = 1;
-const BI_RLE4 = 2;
-const BI_BIT_FIELDS = 3;
-const BI_ALPHA_BIT_FIELDS = 6;
-
-export class BmpDecoder {
+export class BmpDecoder implements IImage {
   // Header
+  public flag: string;
   public fileSize!: number;
   public reserved1!: number;
   public reserved2!: number;
@@ -41,13 +15,14 @@ export class BmpDecoder {
   public height!: number;
   public planes!: number;
   public bitPP!: number;
-  public compression!: number;
+  public compression?: Compression;
   public rawSize!: number;
   public hr!: number;
   public vr!: number;
   public colors!: number;
   public importantColors!: number;
-  public palette!: IPixel[];
+  public palette!: IColor[];
+  public data!: Buffer;
 
   public maskRed!: number;
   public maskGreen!: number;
@@ -56,11 +31,9 @@ export class BmpDecoder {
 
   public toRGBA: boolean;
 
-  private data!: Buffer;
   private pos: number;
   private bottomUp: boolean;
   private readonly buffer: Buffer;
-  private readonly flag: string;
 
   private readonly locRed: number;
   private readonly locGreen: number;
@@ -74,7 +47,6 @@ export class BmpDecoder {
 
   constructor(buffer: Buffer, toRGBA = false) {
     this.buffer = buffer;
-    // console.log(hexy(buffer));
     this.toRGBA = !!toRGBA;
     this.pos = 0;
     this.bottomUp = true;
@@ -95,26 +67,29 @@ export class BmpDecoder {
 
   public parseHeader() {
     this.fileSize = this.readUInt32LE();
+
     this.reserved1 = this.buffer.readUInt16LE(this.pos);
     this.pos += 2;
     this.reserved2 = this.buffer.readUInt16LE(this.pos);
     this.pos += 2;
+
     this.offset = this.readUInt32LE();
 
     // End of BITMAP_FILE_HEADER
     this.headerSize = this.readUInt32LE();
 
-    if (VALID_TYPES.indexOf(this.headerSize) === -1) {
+    if (!(this.headerSize in HeaderTypes)) {
       throw new Error(`Unsupported BMP header size ${this.headerSize}`);
     }
 
     this.width = this.readUInt32LE();
-    this.height = this.buffer.readInt32LE(this.pos);
-    this.pos += 4;
+    this.height = this.readUInt32LE();
+
     this.planes = this.buffer.readUInt16LE(this.pos);
     this.pos += 2;
     this.bitPP = this.buffer.readUInt16LE(this.pos);
     this.pos += 2;
+
     this.compression = this.readUInt32LE();
     this.rawSize = this.readUInt32LE();
     this.hr = this.readUInt32LE();
@@ -139,9 +114,9 @@ export class BmpDecoder {
     // End of BITMAP_INFO_HEADER
 
     if (
-      this.headerSize > BITMAP_INFO_HEADER ||
-      this.compression === BI_BIT_FIELDS ||
-      this.compression === BI_ALPHA_BIT_FIELDS
+      this.headerSize > HeaderTypes.BITMAP_INFO_HEADER ||
+      this.compression === Compression.BI_BIT_FIELDS ||
+      this.compression === Compression.BI_ALPHA_BIT_FIELDS
     ) {
       this.maskRed = this.readUInt32LE();
       this.maskGreen = this.readUInt32LE();
@@ -151,22 +126,23 @@ export class BmpDecoder {
     // End of BITMAP_V2_INFO_HEADER
 
     if (
-      this.headerSize > BITMAP_V2_INFO_HEADER ||
-      this.compression === BI_ALPHA_BIT_FIELDS
+      this.headerSize > HeaderTypes.BITMAP_V2_INFO_HEADER ||
+      this.compression === Compression.BI_ALPHA_BIT_FIELDS
     ) {
       this.maskAlpha = this.readUInt32LE();
     }
 
     // End of BITMAP_V3_INFO_HEADER
 
-    if (this.headerSize > BITMAP_V3_INFO_HEADER) {
-      this.pos += BITMAP_V4_HEADER - BITMAP_V3_INFO_HEADER;
+    if (this.headerSize > HeaderTypes.BITMAP_V3_INFO_HEADER) {
+      this.pos +=
+        HeaderTypes.BITMAP_V4_HEADER - HeaderTypes.BITMAP_V3_INFO_HEADER;
     }
 
     // End of BITMAP_V4_HEADER
 
-    if (this.headerSize > BITMAP_V4_HEADER) {
-      this.pos += BITMAP_V5_HEADER - BITMAP_V4_HEADER;
+    if (this.headerSize > HeaderTypes.BITMAP_V4_HEADER) {
+      this.pos += HeaderTypes.BITMAP_V5_HEADER - HeaderTypes.BITMAP_V4_HEADER;
     }
 
     // End of BITMAP_V5_HEADER
@@ -240,23 +216,18 @@ export class BmpDecoder {
     const padding = mode !== 0 ? 4 - mode : 0;
 
     let lastLine: number | undefined;
-    let lineStr = '';
 
     this.scanImage(padding, xLen, (x, line) => {
       if (line !== lastLine) {
-        // console.log(lineStr);
-        lineStr = '';
         lastLine = line;
       }
 
       const b = this.buffer.readUInt8(this.pos++);
-      // console.log('\n', 'pixel value', b, x, line);
       const location = line * this.width * 4 + x * 8 * 4;
 
       for (let i = 0; i < 8; i++) {
         if (x * 8 + i < this.width) {
           const rgb = this.palette[(b >> (7 - i)) & 0x1];
-          lineStr = `${lineStr}${(b >> (7 - i)) & 0x1}`;
 
           this.data[location + i * this.locAlpha] = 0;
           this.data[location + i * 4 + this.locBlue] = rgb.blue;
@@ -270,7 +241,7 @@ export class BmpDecoder {
   }
 
   public bit4() {
-    if (this.compression === BI_RLE4) {
+    if (this.compression === Compression.BI_RLE4) {
       this.data.fill(0);
 
       let lowNibble = false; //for all count of pixel
@@ -370,7 +341,7 @@ export class BmpDecoder {
   }
 
   public bit8() {
-    if (this.compression === BI_RLE8) {
+    if (this.compression === Compression.BI_RLE8) {
       this.data.fill(0);
 
       let lines = this.bottomUp ? this.height - 1 : 0;
@@ -479,8 +450,7 @@ export class BmpDecoder {
   public bit32() {
     this.scanImage(0, this.width, (x, line) => {
       const loc = line * this.width * 4 + x * 4;
-      const px = this.buffer.readUInt32LE(this.pos);
-      this.pos += 4;
+      const px = this.readUInt32LE();
 
       this.data[loc + this.locRed] = this.shiftRed(px);
       this.data[loc + this.locGreen] = this.shiftGreen(px);
@@ -496,7 +466,7 @@ export class BmpDecoder {
   private scanImage(
     padding = 0,
     width = this.width,
-    processPixel: IPixelProcessor
+    processPixel: IColorProcessor
   ) {
     for (let y = this.height - 1; y >= 0; y--) {
       const line = this.bottomUp ? y : this.height - 1 - y;
