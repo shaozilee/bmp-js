@@ -2,11 +2,11 @@ var fs = require('fs');
 
 var coder = require('../dist/index').default;
 var bmps = [
-  './bit1'
+  // './bit1'
   // './Anti-Cosmo_&_2d_Prof._Calamitous_(Jimmy_Timmy_Power_Hour_2)3'
-  // './bit4',
+  './bit4'
   // './bit4_RLE',
-  // './bit8',
+  // './bit8'
   // './bit8_RLE',
   // './bit16_565',
   // './bit16_a444',
@@ -14,7 +14,7 @@ var bmps = [
   // './bit16_x444',
   // './bit16_x555',
   // './bit24',
-  // './bit32',
+  // './bit32'
   // './bit32_alpha'
 ];
 
@@ -32,7 +32,7 @@ for (let b = 0; b < bmps.length; b++) {
   console.log('fileSize:', decoder.fileSize);
 
   //encode with 24bit
-  decoder.bitPP = 1;
+  decoder.bitPP = 32;
   const encodeData = coder.encode(decoder);
   fs.writeFileSync('test' + '_out.bmp', encodeData.data);
 }

@@ -241,6 +241,7 @@ export class BmpDecoder implements IImage {
   }
 
   public bit4() {
+    console.log(this.compression);
     if (this.compression === Compression.BI_RLE4) {
       this.data.fill(0);
 
