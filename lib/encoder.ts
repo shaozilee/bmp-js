@@ -66,8 +66,9 @@ class BmpEncoder {
         this.bitPP = 24;
     }
 
-    console.log(this.height);
-    this.rgbSize = this.height * Math.ceil((this.width * this.bitPP) / 32) * 4;
+    // Why 2?
+    this.rgbSize =
+      this.height * Math.ceil((this.width * this.bitPP) / 32) * 4 + 2;
 
     this.flag = 'BM';
     this.reserved = 0;
@@ -155,24 +156,30 @@ class BmpEncoder {
     this.writeUInt32LE(0x00ffffff);
     this.writeUInt32LE(0x00000000);
 
+    this.pos += 2;
     const colors = [];
 
-    for (let y = 0; y < this.height; y++) {
-      for (let x = 0; x < this.width; x++) {
-        let i = this.pos + y * this.width + x;
+    let i = 0;
 
-        // console.log('here', i);
+    for (let y = 0; y < this.height; y++) {
+      let line = '';
+
+      for (let x = 0; x < this.width; x++) {
+        const a = this.buffer[i++];
         const b = this.buffer[i++];
         const g = this.buffer[i++];
         const r = this.buffer[i++];
-        const a = this.buffer[i++];
-        // console.log({ r, g, b, a });
         const brightness = r * 0.2126 + g * 0.7152 + b * 0.0722;
 
         colors.push(brightness > 127 ? 0 : 1);
+        line += `${brightness > 127 ? 0 : 1}`;
       }
+
+      console.log(line);
+      line = '';
     }
 
+    console.log(this.height, this.width, colors.length / 8);
     const buff = colors.reduce(
       (acc: number[][], color) => {
         if (acc[0].length === 8) {
@@ -185,7 +192,17 @@ class BmpEncoder {
       [[]]
     );
 
-    console.log(buff);
+    buff
+      .reduce((arr, num) => {
+        arr.push(num.reduce((final, n) => (final << 1) | n, 0));
+        return arr;
+      }, [])
+      // .map(n => n.toString(2).padStart(8, '0'))
+      .forEach((n, i) => {
+        this.data[this.pos + i] = n;
+      });
+
+    console.log('pos', this.pos);
   }
 
   private write16() {

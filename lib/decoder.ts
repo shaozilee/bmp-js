@@ -208,7 +208,7 @@ export class BmpDecoder {
   }
 
   public parseRGBA() {
-    this.data = Buffer.alloc(this.width * this.height * 4, 0xff);
+    this.data = Buffer.alloc(this.width * this.height * 4);
 
     switch (this.bitPP) {
       case 1:
@@ -255,7 +255,7 @@ export class BmpDecoder {
           const rgb = this.palette[(b >> (7 - i)) & 0x1];
           lineStr = `${lineStr}${(b >> (7 - i)) & 0x1}`;
 
-          this.data[location + i * this.locAlpha] = 0xff;
+          this.data[location + i * this.locAlpha] = 0;
           this.data[location + i * 4 + this.locBlue] = rgb.blue;
           this.data[location + i * 4 + this.locGreen] = rgb.green;
           this.data[location + i * 4 + this.locRed] = rgb.red;
@@ -268,7 +268,7 @@ export class BmpDecoder {
 
   public bit4() {
     if (this.compression === BI_RLE4) {
-      this.data.fill(0xff);
+      this.data.fill(0);
 
       let lowNibble = false; //for all count of pixel
       let lines = this.bottomUp ? this.height - 1 : 0;
@@ -368,7 +368,7 @@ export class BmpDecoder {
 
   public bit8() {
     if (this.compression === BI_RLE8) {
-      this.data.fill(0xff);
+      this.data.fill(0);
 
       let lines = this.bottomUp ? this.height - 1 : 0;
       let location = 0;
@@ -469,7 +469,7 @@ export class BmpDecoder {
       this.data[loc + this.locRed] = red;
       this.data[loc + this.locGreen] = green;
       this.data[loc + this.locBlue] = blue;
-      this.data[loc + this.locAlpha] = 0xff;
+      this.data[loc + this.locAlpha] = 0;
     });
   }
 
@@ -519,7 +519,7 @@ export class BmpDecoder {
   private setPixelData(location: number, rgbIndex: number) {
     const { blue, green, red } = this.palette[rgbIndex];
 
-    this.data[location + this.locAlpha] = 0xff;
+    this.data[location + this.locAlpha] = 0;
     this.data[location + 1 + this.locBlue] = blue;
     this.data[location + 2 + this.locGreen] = green;
     this.data[location + 3 + this.locRed] = red;
