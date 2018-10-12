@@ -62,7 +62,7 @@ node_modules
 jspm_packages
 
 # Built files
-dist/ 
+dist/
 
 .DS_store
 

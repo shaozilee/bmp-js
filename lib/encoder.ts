@@ -6,6 +6,8 @@ export interface IImage {
   width: number;
   data: Buffer;
 }
+// @ts-ignore
+import { hexy } from 'hexy';
 
 type IPixelProcessor = (p: number, i: number) => number;
 
@@ -54,8 +56,8 @@ class BmpEncoder {
         this.bitPP = 16;
         break;
       case 1:
-        this.rowModifier = 1 / 8;
-        this.offset = 54;
+        this.rowModifier = 1 / 4;
+        this.offset = 62;
         this.bitPP = 1;
         break;
       default:
@@ -64,22 +66,22 @@ class BmpEncoder {
         this.bitPP = 24;
     }
 
-    this.rgbSize =
-      this.height * (this.width * this.rowModifier + this.extraBytes);
+    console.log(this.height);
+    this.rgbSize = this.height * Math.ceil((this.width * this.bitPP) / 32) * 4;
 
     this.flag = 'BM';
     this.reserved = 0;
     this.fileSize = this.rgbSize + this.offset;
     this.planes = 1;
     this.compress = 0;
-    this.hr = 0;
-    this.vr = 0;
+    this.hr = imgData.hr || 0;
+    this.vr = imgData.vr || 0;
     this.colors = 0;
     this.importantColors = 0;
 
     this.data = Buffer.alloc(this.fileSize);
     this.pos = 0;
-    console.log(this.fileSize);
+    console.log('fileSize', this.fileSize);
   }
 
   public encode() {
@@ -101,6 +103,7 @@ class BmpEncoder {
         this.write24();
     }
 
+    console.log(hexy(this.data));
     return this.data;
   }
 
@@ -114,7 +117,7 @@ class BmpEncoder {
     this.writeUInt32LE(this.headerInfoSize);
     this.writeUInt32LE(this.width);
 
-    this.data.writeInt32LE(-this.height, this.pos);
+    this.data.writeInt32LE(this.height, this.pos);
     this.pos += 4;
 
     this.data.writeUInt16LE(this.planes, this.pos);
@@ -132,35 +135,57 @@ class BmpEncoder {
   }
 
   private write1() {
-    this.writeImage((p, index) => {
-      let i = index;
+    // this.writeImage((p, index) => {
+    //   let i = index;
 
-      const a = this.buffer[i++];
-      const b = this.buffer[i++];
-      const g = this.buffer[i++];
-      const r = this.buffer[i++];
-      const brightness = r * 0.2126 + g * 0.7152 + b * 0.0722;
+    //   const a = this.buffer[i++];
+    //   const b = this.buffer[i++];
+    //   const g = this.buffer[i++];
+    //   const r = this.buffer[i++];
+    //   const brightness = r * 0.2126 + g * 0.7152 + b * 0.0722;
 
-      const newPixel = brightness >= 127 ? 0 : 1;
+    //   const newPixel = brightness >= 127 ? 0 : 1;
 
-      this.data[p] = (this.data[p] << 1) | newPixel;
+    //   this.data[p] = (this.data[p] << 1) | newPixel;
 
-      console.log(this.data[p]);
-      return i;
-    });
-    // for (let y = 0; y < this.height; y++) {
-    //   for (let x = 0; x < this.width; x++) {
-    //     let i = this.pos + y * this.width + x;
+    //   console.log(this.data[p]);
+    //   return i;
+    // });
 
-    //     console.log(i);
-    //     const b = this.buffer[i++];
-    //     const g = this.buffer[i++];
-    //     const r = this.buffer[i++];
-    //     const a = this.buffer[i++];
-    //     console.log({ r, g, b, a });
-    //     // const brightness = r * 0.2126 + g * 0.7152 + b * 0.0722;
-    //   }
-    // }
+    this.writeUInt32LE(0x00ffffff);
+    this.writeUInt32LE(0x00000000);
+
+    const colors = [];
+
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        let i = this.pos + y * this.width + x;
+
+        // console.log('here', i);
+        const b = this.buffer[i++];
+        const g = this.buffer[i++];
+        const r = this.buffer[i++];
+        const a = this.buffer[i++];
+        // console.log({ r, g, b, a });
+        const brightness = r * 0.2126 + g * 0.7152 + b * 0.0722;
+
+        colors.push(brightness > 127 ? 0 : 1);
+      }
+    }
+
+    const buff = colors.reduce(
+      (acc: number[][], color) => {
+        if (acc[0].length === 8) {
+          acc.unshift([]);
+        }
+
+        acc[0].push(color);
+        return acc;
+      },
+      [[]]
+    );
+
+    console.log(buff);
   }
 
   private write16() {

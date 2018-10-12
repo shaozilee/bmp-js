@@ -72,7 +72,6 @@ export class BmpDecoder {
 
   constructor(buffer: Buffer, toRGBA = false) {
     this.buffer = buffer;
-
     this.toRGBA = !!toRGBA;
     this.pos = 0;
     this.bottomUp = true;
