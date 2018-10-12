@@ -241,7 +241,6 @@ export class BmpDecoder implements IImage {
   }
 
   public bit4() {
-    console.log(this.compression);
     if (this.compression === Compression.BI_RLE4) {
       this.data.fill(0);
 
@@ -312,7 +311,7 @@ export class BmpDecoder implements IImage {
       const mode = xLen % 4;
       const padding = mode !== 0 ? 4 - mode : 0;
 
-      this.scanImage(padding, this.width, (x, line) => {
+      this.scanImage(padding, xLen, (x, line) => {
         const b = this.buffer.readUInt8(this.pos++);
         const location = line * this.width * 4 + x * 2 * 4;
 
