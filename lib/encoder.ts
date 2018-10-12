@@ -11,6 +11,10 @@ import { hexy } from 'hexy';
 
 type IPixelProcessor = (p: number, i: number, x: number, y: number) => number;
 
+function createInteger(nums: number[]) {
+  return nums.reduce((final, n) => (final << 1) | n, 0);
+}
+
 class BmpEncoder {
   private readonly fileSize: number;
   private readonly reserved: number;
@@ -150,18 +154,16 @@ class BmpEncoder {
       const b = this.buffer[i++];
       const g = this.buffer[i++];
       const r = this.buffer[i++];
+
       const brightness = r * 0.2126 + g * 0.7152 + b * 0.0722;
 
       lineArr.push(brightness > 127 ? 0 : 1);
-      let int = lineArr.reduce((final, n) => (final << 1) | n, 0);
-
-      if (x === this.width - 1 && lineArr.length > 0) {
-        int <<= 4;
-      }
-
-      this.data[p - 1] = int;
 
       if ((x + 1) % 8 === 0) {
+        this.data[p - 1] = createInteger(lineArr);
+        lineArr = [];
+      } else if (x === this.width - 1 && lineArr.length > 0) {
+        this.data[p - 1] = createInteger(lineArr) << 4;
         lineArr = [];
       }
 
