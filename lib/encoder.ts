@@ -9,7 +9,7 @@ export interface IImage {
 // @ts-ignore
 import { hexy } from 'hexy';
 
-type IPixelProcessor = (p: number, i: number) => number;
+type IPixelProcessor = (p: number, i: number, x: number, y: number) => number;
 
 class BmpEncoder {
   private readonly fileSize: number;
@@ -56,9 +56,11 @@ class BmpEncoder {
         this.bitPP = 16;
         break;
       case 1:
-        this.rowModifier = 1 / 4;
+        this.rowModifier = 1 / 8;
         this.offset = 62;
         this.bitPP = 1;
+        const rowWidth = (this.width * this.bitPP) / 32;
+        this.extraBytes = (Math.ceil(rowWidth) - rowWidth) * 4;
         break;
       default:
         this.rowModifier = 3;
@@ -82,7 +84,6 @@ class BmpEncoder {
 
     this.data = Buffer.alloc(this.fileSize);
     this.pos = 0;
-    console.log('fileSize', this.fileSize);
   }
 
   public encode() {
@@ -136,73 +137,36 @@ class BmpEncoder {
   }
 
   private write1() {
-    // this.writeImage((p, index) => {
-    //   let i = index;
+    this.writeUInt32LE(0x00ffffff); // Black
+    this.writeUInt32LE(0x00000000); // White
 
-    //   const a = this.buffer[i++];
-    //   const b = this.buffer[i++];
-    //   const g = this.buffer[i++];
-    //   const r = this.buffer[i++];
-    //   const brightness = r * 0.2126 + g * 0.7152 + b * 0.0722;
+    this.pos += 1; // ?
 
-    //   const newPixel = brightness >= 127 ? 0 : 1;
+    let lineArr: number[] = [];
 
-    //   this.data[p] = (this.data[p] << 1) | newPixel;
+    this.writeImage((p, index, x) => {
+      let i = index + 1;
 
-    //   console.log(this.data[p]);
-    //   return i;
-    // });
+      const b = this.buffer[i++];
+      const g = this.buffer[i++];
+      const r = this.buffer[i++];
+      const brightness = r * 0.2126 + g * 0.7152 + b * 0.0722;
 
-    this.writeUInt32LE(0x00ffffff);
-    this.writeUInt32LE(0x00000000);
+      lineArr.push(brightness > 127 ? 0 : 1);
+      let int = lineArr.reduce((final, n) => (final << 1) | n, 0);
 
-    this.pos += 2;
-    const colors = [];
-
-    let i = 0;
-
-    for (let y = 0; y < this.height; y++) {
-      let line = '';
-
-      for (let x = 0; x < this.width; x++) {
-        const a = this.buffer[i++];
-        const b = this.buffer[i++];
-        const g = this.buffer[i++];
-        const r = this.buffer[i++];
-        const brightness = r * 0.2126 + g * 0.7152 + b * 0.0722;
-
-        colors.push(brightness > 127 ? 0 : 1);
-        line += `${brightness > 127 ? 0 : 1}`;
+      if (x === this.width - 1 && lineArr.length > 0) {
+        int <<= 4;
       }
 
-      console.log(line);
-      line = '';
-    }
+      this.data[p - 1] = int;
 
-    console.log(this.height, this.width, colors.length / 8);
-    const buff = colors.reduce(
-      (acc: number[][], color) => {
-        if (acc[0].length === 8) {
-          acc.unshift([]);
-        }
+      if ((x + 1) % 8 === 0) {
+        lineArr = [];
+      }
 
-        acc[0].push(color);
-        return acc;
-      },
-      [[]]
-    );
-
-    buff
-      .reduce((arr, num) => {
-        arr.push(num.reduce((final, n) => (final << 1) | n, 0));
-        return arr;
-      }, [])
-      // .map(n => n.toString(2).padStart(8, '0'))
-      .forEach((n, i) => {
-        this.data[this.pos + i] = n;
-      });
-
-    console.log('pos', this.pos);
+      return i;
+    });
   }
 
   private write16() {
@@ -212,7 +176,6 @@ class BmpEncoder {
       const b = this.buffer[i++] / 8; // b
       const g = this.buffer[i++] / 8; // g
       const r = this.buffer[i++] / 8; // r
-      console.log({ r, g, b });
 
       const color = (r << 10) | (g << 5) | b;
 
@@ -254,26 +217,18 @@ class BmpEncoder {
     let i = 0;
 
     for (let y = 0; y < this.height; y++) {
-      let line = '';
-
       for (let x = 0; x < this.width; x++) {
-        const p = Math.floor(this.pos + y * rowBytes + x * this.rowModifier);
+        const p = Math.floor(
+          this.pos + (this.height - 1 - y) * rowBytes + x * this.rowModifier
+        );
 
-        i = writePixel.call(this, p, i);
-        // console.log(this.data[p]);
-        if (x % 7 === 0) {
-          line += this.data[p].toString(2).padStart(8, '0'); // writes 0-25
-        }
-
-        // 5 so wont work for 1 bit. 8 pixels stored in 0-255
+        i = writePixel.call(this, p, i, x, y);
       }
 
-      console.log(line);
-
-      if (this.extraBytes > 0) {
-        const fillOffset = this.pos + y * rowBytes + this.width * 3;
-        this.data.fill(0, fillOffset, fillOffset + this.extraBytes);
-      }
+      // if (this.extraBytes > 0) {
+      //   const fillOffset = this.pos + y * rowBytes + this.width * 3;
+      //   this.data.fill(0, fillOffset, fillOffset + this.extraBytes);
+      // }
     }
   }
 

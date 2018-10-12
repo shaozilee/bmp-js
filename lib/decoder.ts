@@ -6,6 +6,8 @@ interface IPixel {
   blue: number;
   quad: number;
 }
+// @ts-ignore
+import { hexy } from 'hexy';
 
 type IPixelProcessor = (x: number, line: number) => void;
 
@@ -72,6 +74,7 @@ export class BmpDecoder {
 
   constructor(buffer: Buffer, toRGBA = false) {
     this.buffer = buffer;
+    // console.log(hexy(buffer));
     this.toRGBA = !!toRGBA;
     this.pos = 0;
     this.bottomUp = true;
