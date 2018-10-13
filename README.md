@@ -39,7 +39,7 @@ const bmpData = bmp.decode(bmpBuffer, { toRGBA: true });
 
 #### Supported Compression Methods
 
-Currently compression is only supported during decoding. The following methods are implmented:
+Currently compression is only supported during decoding. The following methods are implemented:
 
 - NONE - Most common
 - BI_RLE8 - Can be used only with 8-bit/pixel bitmap
@@ -49,7 +49,7 @@ Currently compression is only supported during decoding. The following methods a
 
 ### Encoding
 
-To encode an image all you need is a buffer with the image data, the height and the width. You can specify the bit depth of the output image by modifying `bitPP`. If you do not provide a value the output image defaults to 24-bit.
+To encode an image all you need is a buffer with the image data, the height and the width. You can specify the bit depth of the output image by modifying `bitPP`. If you do not provide a value, the output image defaults to 24-bit.
 
 All header fields are valid options to `encode` and will be encoded into the header.
 
@@ -81,14 +81,14 @@ fs.writeFileSync('./image.bmp', rawData.data);
 | height          | number  | The bitmap height in pixels (unsigned 16-bit)                                                          |
 | planes          | number  | The number of color planes, must be 1                                                                  |
 | bitPP           | number  | The number of bits per pixel                                                                           |
-| compress        | number  | the compression method being used. See the supported compression methods                               |
-| rawSize         | number  | the image size. This is the size of the raw bitmap data; a dummy 0 can be given for BI_RGB bitmaps.    |
-| hr              | number  | he horizontal resolution of the image. (pixel per metre, signed integer)                               |
-| vr              | number  | the vertical resolution of the image. (pixel per metre, signed integer)                                |
-| colors          | number  | the number of colors in the color palette, or 0 to default to 2n                                       |
-| importantColors | number  | the number of important colors used, or 0 when every color is important; generally ignored             |
-| palette         | Color[] | the colors used to render the image only used for 1, 4, and 8 bitPP images                             |
-| data            | Byte[]  | the data in ABGR                                                                                       |
+| compress        | number  | The compression method being used. See the supported compression methods                               |
+| rawSize         | number  | The image size. This is the size of the raw bitmap data; a dummy 0 can be given for BI_RGB bitmaps.    |
+| hr              | number  | The horizontal resolution of the image. (pixel per metre, signed integer)                               |
+| vr              | number  | The vertical resolution of the image. (pixel per metre, signed integer)                                |
+| colors          | number  | The number of colors in the color palette, or 0 to default to 2n                                       |
+| importantColors | number  | The number of important colors used, or 0 when every color is important; generally ignored             |
+| palette         | Color[] | The colors used to render the image. only used for 1, 4, and 8 bitPP images                             |
+| data            | Byte[]  | The data in ABGR                                                                                       |
 
 ### Color
 
@@ -105,7 +105,7 @@ Color Format:
 }
 ```
 
-To encode to 4 or 8 bit a color palette must be provided. 1 bit defaults to black and white but you can override those via palette.
+To encode to 4 or 8 bit a color palette must be provided. 1 bit defaults to black and white but you can override this via palette.
 
 ```js
 const rawData = bmp.encode({
