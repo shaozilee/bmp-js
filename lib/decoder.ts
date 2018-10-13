@@ -24,12 +24,12 @@ export default class BmpDecoder implements IImage {
   public palette!: IColor[];
   public data!: Buffer;
 
-  public maskRed!: number;
-  public maskGreen!: number;
-  public maskBlue!: number;
-  public maskAlpha!: number;
+  private maskRed!: number;
+  private maskGreen!: number;
+  private maskBlue!: number;
+  private maskAlpha!: number;
 
-  public toRGBA: boolean;
+  private toRGBA: boolean;
 
   private pos: number;
   private bottomUp: boolean;
