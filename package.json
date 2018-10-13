@@ -2,34 +2,20 @@
   "name": "bmp-ts",
   "version": "0.2.5",
   "description": "A pure typescript BMP encoder and decoder",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/shaozilee/bmp-js"
   },
-  "keywords": [
-    "bmp",
-    "1bit",
-    "4bit",
-    "8bit",
-    "16bit",
-    "24bit",
-    "32bit",
-    "encoder",
-    "decoder",
-    "image",
-    "javascript",
-    "js"
-  ],
   "files": [
     "dist/"
   ],
   "author": {
-    "name": "shaozilee",
-    "email": "shaozilee@gmail.com"
+    "name": "Andrew lisowski",
+    "email": "lisowski54@gmail.com"
   },
-  "license": "MIT",
   "dependencies": {
     "@types/node": "^10.11.7"
   },
@@ -42,7 +28,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "node test/test.js",
+    "test:old": "node test/test.js",
     "lint": "tslint -p . --format stylish"
   },
   "prettier": {
@@ -58,5 +44,19 @@
       "prettier --write",
       "git add"
     ]
-  }
+  },
+  "keywords": [
+    "bmp",
+    "1bit",
+    "4bit",
+    "8bit",
+    "16bit",
+    "24bit",
+    "32bit",
+    "encoder",
+    "decoder",
+    "image",
+    "javascript",
+    "js"
+  ]
 }
