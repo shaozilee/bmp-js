@@ -1,3 +1,5 @@
+[![Codecov](https://img.shields.io/codecov/c/github/intuit/ignite.svg?style=for-the-badge)](https://codecov.io/gh/hipstersmoothie/bmp-js) [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=for-the-badge)](https://github.com/prettier/prettier) [![CircleCI](https://img.shields.io/circleci/project/github/hipstersmoothie/bmp-js/master.svg?style=for-the-badge)](https://circleci.com/gh/hipstersmoothie/bmp-js)
+
 <div align="center">
   <img width="200" height="200"
     src="https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/240/apple/129/world-map_1f5fa.png">
