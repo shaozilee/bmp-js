@@ -1,0 +1,43 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`BMP decode 1-bit 1`] = `"cec76def32993b226b554d08f78948d9"`;
+
+exports[`BMP decode 4-bit RLE 1`] = `"beac91cf64120346736c9b1383f9da60"`;
+
+exports[`BMP decode 4-bit normal 1`] = `"df219955a66ea20a8ccb4f0537930458"`;
+
+exports[`BMP decode 8-bit RLE 1`] = `"81bbf4f1f828dde5665bf1d798e39e72"`;
+
+exports[`BMP decode 8-bit normal 1`] = `"6697bb6ab8078d739fc40bbe558bf4ce"`;
+
+exports[`BMP decode 16-bit 444 1`] = `"988a4d08bdaf12a32954e81f5794503a"`;
+
+exports[`BMP decode 16-bit 444 2`] = `"e16a3905a7a21a0e8f504285fccb3544"`;
+
+exports[`BMP decode 16-bit 555 1`] = `"fea6f96b3099726499275ae8b395df02"`;
+
+exports[`BMP decode 16-bit 555 2`] = `"fea6f96b3099726499275ae8b395df02"`;
+
+exports[`BMP decode 16-bit 555 3`] = `"6fb3e1971fa948d1cc1fe268a037f05a"`;
+
+exports[`BMP decode 16-bit 565 1`] = `"aa2751f1e5c305448a9622a926ca3628"`;
+
+exports[`BMP decode 24-bit 1`] = `"389fa2b1873b5aa14f7ecab58fe96bd9"`;
+
+exports[`BMP decode 32-bit alpha - toRGBA 1`] = `"1fb6cd994623e11eff63c44693a405ad"`;
+
+exports[`BMP decode 32-bit alpha 1`] = `"5cb1c7699a421a7bead9adc527e9da8f"`;
+
+exports[`BMP decode 32-bit normal 1`] = `"5cb1c7699a421a7bead9adc527e9da8f"`;
+
+exports[`BMP encode 1-bit 1`] = `"078d88f8242ceacbc12ced3af9ed5c03"`;
+
+exports[`BMP encode 4-bit works when colors provided 1`] = `"bfae56540db1291326a6f9f62cf6f35b"`;
+
+exports[`BMP encode 8-bit works when colors provided 1`] = `"1e911ae143c47c2264f66b8f40a32e5d"`;
+
+exports[`BMP encode 16-bit 1`] = `"649365cfd6af25db632ade4ed84345d4"`;
+
+exports[`BMP encode 24-bit 1`] = `"6001e6e75e7dea586aeb617a5c8026fb"`;
+
+exports[`BMP encode 32-bit 1`] = `"6bc4f43b00e2d88e2c553278472243b7"`;

@@ -1,11 +1,53 @@
 {
-  "name": "bmp-js",
-  "version": "0.1.0",
-  "description": "A pure javascript BMP encoder and decoder",
-  "main": "index.js",
+  "name": "bmp-ts",
+  "version": "0.2.5",
+  "description": "A pure typescript BMP encoder and decoder",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/shaozilee/bmp-js"
+  },
+  "files": [
+    "dist/"
+  ],
+  "author": {
+    "name": "Andrew lisowski",
+    "email": "lisowski54@gmail.com"
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "tslint -p . --format stylish",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@types/node": "^10.11.7"
+  },
+  "devDependencies": {
+    "@types/jest": "^23.3.5",
+    "crypto": "^1.0.1",
+    "husky": "^1.1.2",
+    "jest": "^23.6.0",
+    "lint-staged": "^7.3.0",
+    "prettier": "^1.14.3",
+    "ts-jest": "^23.10.4",
+    "tslint": "^5.11.0",
+    "typescript": "^3.1.3"
+  },
+  "prettier": {
+    "singleQuote": true
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,json,css,md}": [
+      "prettier --write",
+      "git add"
+    ]
   },
   "keywords": [
     "bmp",
@@ -21,12 +63,36 @@
     "javascript",
     "js"
   ],
-  "author": {
-    "name": "shaozilee",
-    "email": "shaozilee@gmail.com"
-  },
-  "license": "MIT",
-  "dependencies": {},
-  "devDependencies": {
+  "jest": {
+    "collectCoverage": true,
+    "coverageDirectory": "./coverage",
+    "coverageReporters": [
+      "json",
+      "lcov",
+      "text",
+      "html"
+    ],
+    "transform": {
+      "^.+\\.(ts|tsx)$": "ts-jest"
+    },
+    "testMatch": [
+      "**/*.test.+(ts|tsx|js)"
+    ],
+    "globals": {
+      "test-jest": {
+        "tsConfig": "tsconfig.json"
+      }
+    },
+    "moduleFileExtensions": [
+      "ts",
+      "js"
+    ],
+    "collectCoverageFrom": [
+      "**/*.{ts,tsx}",
+      "!**/*.d.ts",
+      "!**/dist/**",
+      "!**/node_modules/**",
+      "!**/vendor/**"
+    ]
   }
 }

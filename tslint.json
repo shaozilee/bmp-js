@@ -1,0 +1,30 @@
+{
+  "defaultSeverity": "error",
+  "extends": [
+    "tslint:recommended",
+    "tslint-config-prettier",
+    "tslint-xo/space"
+  ],
+  "jsRules": {},
+  "rules": {
+    "no-bitwise": false,
+    "early-exit": false,
+    "no-unused": [true, "ignore-parameters"],
+    "no-dynamic-delete": false,
+    "comment-format": false,
+    "no-require-imports": false,
+    "object-curly-spacing": false,
+    "quotemark": [true, "single", "avoid-escape"],
+    "object-literal-sort-keys": false,
+    "max-classes-per-file": [true, 5, "exclude-class-expressions"],
+    "underscore-consistent-invocation": [
+      true,
+      {
+        "style": "static"
+      }
+    ],
+    "no-non-null-assertion": false,
+    "number-literal-format": false
+  },
+  "rulesDirectory": []
+}
