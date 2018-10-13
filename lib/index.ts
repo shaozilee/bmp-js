@@ -1,15 +1,8 @@
-/**
- * @author shaozilee
- *
- * support 1bit 4bit 8bit 24bit decode
- * encode with 24bit
- *
- */
-
-import decode from './decoder';
-import encode from './encoder';
+import BmpDecoder from './decoder';
+import BmpEncoder from './encoder';
+import { IImage } from './types';
 
 export default {
-  decode,
-  encode
+  decode: (bmpData: Buffer) => new BmpDecoder(bmpData),
+  encode: (imgData: IImage) => new BmpEncoder(imgData)
 };

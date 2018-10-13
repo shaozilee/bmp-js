@@ -12,7 +12,7 @@ function createColor(color: IColor): number {
   );
 }
 
-export class BmpEncoder implements IImage {
+export default class BmpEncoder implements IImage {
   public readonly fileSize: number;
   public readonly reserved1: number;
   public readonly reserved2: number;
@@ -328,5 +328,3 @@ export class BmpEncoder implements IImage {
     this.pos += 4;
   }
 }
-
-export default (imgData: IImage) => new BmpEncoder(imgData);

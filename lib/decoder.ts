@@ -3,7 +3,7 @@ import { Compression, HeaderTypes, IColor, IImage } from './types';
 
 type IColorProcessor = (x: number, line: number) => void;
 
-export class BmpDecoder implements IImage {
+export default class BmpDecoder implements IImage {
   // Header
   public flag: string;
   public fileSize!: number;
@@ -499,5 +499,3 @@ export class BmpDecoder implements IImage {
     return location + 4;
   }
 }
-
-export default (bmpData: Buffer) => new BmpDecoder(bmpData);
