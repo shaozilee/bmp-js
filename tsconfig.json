@@ -12,5 +12,6 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true
-  }
+  },
+  "include": ["lib/"]
 }

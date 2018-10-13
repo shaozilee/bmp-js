@@ -67,3 +67,5 @@ dist/
 .DS_store
 
 
+
+./coverage
