@@ -1,6 +1,6 @@
 <div align="center">
   <img width="200" height="200"
-    src="https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/240/apple/129/world-map_1f5fa.png">
+    src="./logo.png">
   <h1>bmp-ts</h1>
   <p>A pure typescript <code>bmp</code> encoder and decoder.</p>
 </div
