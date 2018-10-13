@@ -45,48 +45,43 @@ export class BmpEncoder implements IImage {
 
     // Header
     this.flag = 'BM';
+    this.bitPP = imgData.bitPP;
+    this.offset = 54;
     this.reserved1 = imgData.reserved1 || 0;
     this.reserved2 = imgData.reserved2 || 0;
     this.planes = 1;
     this.compress = 0;
     this.hr = imgData.hr || 0;
     this.vr = imgData.vr || 0;
+    this.importantColors = imgData.importantColors || 0;
     this.colors = Math.min(
-      2 ** (imgData.bitPP - 1),
+      2 ** (this.bitPP - 1 || 1),
       imgData.colors || Infinity
     );
-    this.importantColors = imgData.importantColors || 0;
     this.palette = imgData.palette || [];
 
-    switch (imgData.bitPP) {
+    if (this.colors) {
+      this.offset += this.colors * 4;
+    }
+
+    switch (this.bitPP) {
       case 32:
         this.bytesInColor = 4;
-        this.offset = 54;
-        this.bitPP = 32;
         break;
       case 16:
         this.bytesInColor = 2;
-        this.offset = 54;
-        this.bitPP = 16;
-        break;
-      case 1:
-        this.bytesInColor = 1 / 8;
-        this.offset = 62;
-        this.bitPP = 1;
-        break;
-      case 4:
-        this.bytesInColor = 1 / 2;
-        this.offset = this.colors * 4 + 54;
-        this.bitPP = 4;
         break;
       case 8:
         this.bytesInColor = 1;
-        this.offset = this.colors * 4 + 54;
-        this.bitPP = 8;
+        break;
+      case 4:
+        this.bytesInColor = 1 / 2;
+        break;
+      case 1:
+        this.bytesInColor = 1 / 8;
         break;
       default:
         this.bytesInColor = 3;
-        this.offset = 54;
         this.bitPP = 24;
     }
 
@@ -96,7 +91,6 @@ export class BmpEncoder implements IImage {
     this.extraBytes = (rowBytes - rowWidth) * 4;
     // Why 2?
     this.rawSize = this.height * rowBytes * 4 + 2;
-
     this.fileSize = this.rawSize + this.offset;
     this.data = Buffer.alloc(this.fileSize);
     this.pos = 0;
@@ -110,20 +104,20 @@ export class BmpEncoder implements IImage {
     this.writeHeader();
 
     switch (this.bitPP) {
-      case 1:
-        this.bit1();
-        break;
-      case 4:
-        this.bit4();
-        break;
-      case 8:
-        this.bit8();
+      case 32:
+        this.bit32();
         break;
       case 16:
         this.bit16();
         break;
-      case 32:
-        this.bit32();
+      case 8:
+        this.bit8();
+        break;
+      case 4:
+        this.bit4();
+        break;
+      case 1:
+        this.bit1();
         break;
       default:
         this.bit24();
@@ -138,6 +132,7 @@ export class BmpEncoder implements IImage {
 
     this.buffer.writeUInt16LE(this.reserved1, 0);
     this.pos += 2;
+
     this.buffer.writeUInt16LE(this.reserved2, 2);
     this.pos += 2;
 
