@@ -49,7 +49,7 @@ Currently only compression is supported in decoding. The following methods are s
 
 ### Encoding
 
-To encode an image all you need it a buffer with the image data, the height and the width. You can specify the bit depth of the output image by modifying `bitPP`. If you do not provide a value the output image defaults to 24-bit.
+To encode an image all you need is a buffer with the image data, the height and the width. You can specify the bit depth of the output image by modifying `bitPP`. If you do not provide a value the output image defaults to 24-bit.
 
 All header fields are valid options to `encode` and will be encoded into the header.
 
