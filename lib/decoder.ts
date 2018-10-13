@@ -270,7 +270,7 @@ export default class BmpDecoder implements IImage {
           }
 
           if (b === 2) {
-            // offset x,y
+            // offset x, y
             const x = this.buffer.readUInt8(this.pos++);
             const y = this.buffer.readUInt8(this.pos++);
 

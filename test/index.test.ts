@@ -6,219 +6,121 @@ import bmp from '../lib/';
 
 const createPath = (p: string) => path.join(process.cwd(), p);
 
-function checksum(str: string, algorithm = 'md5', encoding = 'hex') {
-  return (
-    crypto
-      .createHash(algorithm)
-      .update(str, 'utf8')
-      // @ts-ignore
-      .digest(encoding)
-  );
-}
+const checksum = (str: string, algorithm = 'md5', encoding = 'hex') =>
+  crypto
+    .createHash(algorithm)
+    .update(str, 'utf8')
+    // @ts-ignore
+    .digest(encoding);
 
-describe('BMP', () => {
-  describe('decode', () => {
-    test('errors for non bmp files', () => {
-      const buff = fs.readFileSync(createPath('package.json'));
-      expect(() => bmp.decode(buff)).toThrow();
-    });
+describe('decode', () => {
+  const decodeTest = (bitPP: number | string) => () => {
+    const buff = fs.readFileSync(createPath(`./test/images/bit${bitPP}.bmp`));
+    const res = checksum(bmp.decode(buff).data.toString());
+    expect(res).toMatchSnapshot();
+  };
 
-    test('1-bit', () => {
-      const buff = fs.readFileSync(createPath('./test/images/bit1.bmp'));
-      const res = checksum(bmp.decode(buff).data.toString());
-      expect(res).toMatchSnapshot();
-    });
-
-    describe('4-bit', () => {
-      test('normal', () => {
-        const buff = fs.readFileSync(createPath('./test/images/bit4.bmp'));
-        const res = checksum(bmp.decode(buff).data.toString());
-        expect(res).toMatchSnapshot();
-      });
-
-      test('RLE', () => {
-        const buff = fs.readFileSync(createPath('./test/images/bit4_RLE.bmp'));
-        const res = checksum(bmp.decode(buff).data.toString());
-        expect(res).toMatchSnapshot();
-      });
-    });
-
-    describe('8-bit', () => {
-      test('normal', () => {
-        const buff = fs.readFileSync(createPath('./test/images/bit8.bmp'));
-        const res = checksum(bmp.decode(buff).data.toString());
-        expect(res).toMatchSnapshot();
-      });
-
-      test('RLE', () => {
-        const buff = fs.readFileSync(createPath('./test/images/bit8_RLE.bmp'));
-        const res = checksum(bmp.decode(buff).data.toString());
-        expect(res).toMatchSnapshot();
-      });
-    });
-
-    describe('16-bit', () => {
-      test('555', () => {
-        const buff = fs.readFileSync(
-          createPath('./test/images/bit16_x555.bmp')
-        );
-        const res = checksum(bmp.decode(buff).data.toString());
-        expect(res).toMatchSnapshot();
-      });
-
-      test('444', () => {
-        const buff = fs.readFileSync(
-          createPath('./test/images/bit16_x444.bmp')
-        );
-        const res = checksum(bmp.decode(buff).data.toString());
-        expect(res).toMatchSnapshot();
-      });
-
-      test('555', () => {
-        const buff = fs.readFileSync(
-          createPath('./test/images/bit16_x555.bmp')
-        );
-        const res = checksum(bmp.decode(buff).data.toString());
-        expect(res).toMatchSnapshot();
-      });
-
-      test('444', () => {
-        const buff = fs.readFileSync(
-          createPath('./test/images/bit16_a444.bmp')
-        );
-        const res = checksum(bmp.decode(buff).data.toString());
-        expect(res).toMatchSnapshot();
-      });
-
-      test('555', () => {
-        const buff = fs.readFileSync(
-          createPath('./test/images/bit16_a555.bmp')
-        );
-        const res = checksum(bmp.decode(buff).data.toString());
-        expect(res).toMatchSnapshot();
-      });
-
-      test('565', () => {
-        const buff = fs.readFileSync(createPath('./test/images/bit16_565.bmp'));
-        const res = checksum(bmp.decode(buff).data.toString());
-        expect(res).toMatchSnapshot();
-      });
-    });
-
-    test('24-bit', () => {
-      const buff = fs.readFileSync(createPath('./test/images/bit24.bmp'));
-      const res = checksum(bmp.decode(buff).data.toString());
-      expect(res).toMatchSnapshot();
-    });
-
-    describe('32-bit', () => {
-      test('normal', () => {
-        const buff = fs.readFileSync(createPath('./test/images/bit32.bmp'));
-        const res = checksum(bmp.decode(buff).data.toString());
-        expect(res).toMatchSnapshot();
-      });
-
-      test('alpha', () => {
-        const buff = fs.readFileSync(
-          createPath('./test/images/bit32_alpha.bmp')
-        );
-        const res = checksum(bmp.decode(buff).data.toString());
-        expect(res).toMatchSnapshot();
-      });
-
-      test('alpha - toRGBA', () => {
-        const buff = fs.readFileSync(
-          createPath('./test/images/bit32_alpha.bmp')
-        );
-        const res = checksum(
-          bmp.decode(buff, { toRGBA: true }).data.toString()
-        );
-        expect(res).toMatchSnapshot();
-      });
-    });
+  test('errors for non bmp files', () => {
+    const buff = fs.readFileSync(createPath('package.json'));
+    expect(() => bmp.decode(buff)).toThrow();
   });
 
-  describe('encode', () => {
-    test('1-bit', () => {
-      const buff = fs.readFileSync(createPath('./test/images/bit32.bmp'));
-      const bitmap = bmp.decode(buff);
+  test('1-bit', decodeTest(1));
 
-      bitmap.bitPP = 1;
+  describe('4-bit', () => {
+    test('normal', decodeTest(4));
+    test('RLE', decodeTest('4_RLE'));
+  });
 
-      const res = checksum(bmp.encode(bitmap).data.toString());
-      expect(res).toMatchSnapshot();
-    });
+  describe('8-bit', () => {
+    test('normal', decodeTest(8));
+    test('RLE', decodeTest('8_RLE'));
+  });
 
-    describe('4-bit', () => {
-      test('errors without color pallette', () => {
-        const buff = fs.readFileSync(createPath('./test/images/bit32.bmp'));
-        const bitmap = bmp.decode(buff);
+  describe('16-bit', () => {
+    test('565', decodeTest('16_565'));
+    test('a444', decodeTest('16_a444'));
+    test('a555', decodeTest('16_a555'));
+    test('x444', decodeTest('16_x444'));
+    test('x555', decodeTest('16_x555'));
+  });
 
-        bitmap.bitPP = 4;
+  test('24-bit', decodeTest(24));
 
-        expect(() => bmp.encode(bitmap)).toThrow();
-      });
-
-      test('works when colors provided', () => {
-        const buff = fs.readFileSync(createPath('./test/images/bit4.bmp'));
-        const bitmap = bmp.decode(buff);
-
-        bitmap.bitPP = 4;
-
-        const res = checksum(bmp.encode(bitmap).data.toString());
-        expect(res).toMatchSnapshot();
-      });
-    });
-
-    describe('8-bit', () => {
-      test('errors without color pallette', () => {
-        const buff = fs.readFileSync(createPath('./test/images/bit32.bmp'));
-        const bitmap = bmp.decode(buff);
-
-        bitmap.bitPP = 8;
-
-        expect(() => bmp.encode(bitmap)).toThrow();
-      });
-
-      test('works when colors provided', () => {
-        const buff = fs.readFileSync(createPath('./test/images/bit8.bmp'));
-        const bitmap = bmp.decode(buff);
-
-        bitmap.bitPP = 8;
-
-        const res = checksum(bmp.encode(bitmap).data.toString());
-        expect(res).toMatchSnapshot();
-      });
-    });
-
-    test('16-bit', () => {
-      const buff = fs.readFileSync(createPath('./test/images/bit32.bmp'));
-      const bitmap = bmp.decode(buff);
-
-      bitmap.bitPP = 16;
-
-      const res = checksum(bmp.encode(bitmap).data.toString());
-      expect(res).toMatchSnapshot();
-    });
-
-    test('24-bit', () => {
-      const buff = fs.readFileSync(createPath('./test/images/bit32.bmp'));
-      const bitmap = bmp.decode(buff);
-
-      bitmap.bitPP = 24;
-
-      const res = checksum(bmp.encode(bitmap).data.toString());
-      expect(res).toMatchSnapshot();
-    });
-
-    test('32-bit', () => {
-      const buff = fs.readFileSync(createPath('./test/images/bit32.bmp'));
-      const bitmap = bmp.decode(buff);
-
-      bitmap.bitPP = 32;
-
-      const res = checksum(bmp.encode(bitmap).data.toString());
+  describe('32-bit', () => {
+    test('normal', decodeTest(32));
+    test('alpha', decodeTest('32_alpha'));
+    test('alpha - toRGBA', () => {
+      const buff = fs.readFileSync(createPath('./test/images/bit32_alpha.bmp'));
+      const res = checksum(bmp.decode(buff, { toRGBA: true }).data.toString());
       expect(res).toMatchSnapshot();
     });
   });
+});
+
+describe('encode', () => {
+  const encodeTest = (bitPP: number, file = 32) => () => {
+    const buff = fs.readFileSync(createPath(`./test/images/bit${file}.bmp`));
+    const bitmap = bmp.decode(buff);
+
+    bitmap.bitPP = bitPP;
+
+    const res = checksum(bmp.encode(bitmap).data.toString());
+    expect(res).toMatchSnapshot();
+  };
+
+  test('1-bit', encodeTest(1));
+
+  describe('4-bit', () => {
+    test('errors without color pallette', () => {
+      const buff = fs.readFileSync(createPath('./test/images/bit32.bmp'));
+      const bitmap = bmp.decode(buff);
+
+      bitmap.bitPP = 4;
+
+      expect(() => bmp.encode(bitmap)).toThrow();
+    });
+
+    test('works when colors provided', encodeTest(4, 4));
+  });
+
+  describe('8-bit', () => {
+    test('errors without color pallette', () => {
+      const buff = fs.readFileSync(createPath('./test/images/bit32.bmp'));
+      const bitmap = bmp.decode(buff);
+
+      bitmap.bitPP = 8;
+
+      expect(() => bmp.encode(bitmap)).toThrow();
+    });
+
+    test('works when colors provided', encodeTest(8, 8));
+  });
+
+  test('16-bit', encodeTest(16));
+  test('24-bit', encodeTest(24));
+  test('32-bit', encodeTest(32));
+});
+
+describe('decode -> encode', () => {
+  const compareDecodeEncode = (
+    bitPP: number,
+    file: number | string = bitPP
+  ) => () => {
+    const buff = fs.readFileSync(createPath(`./test/images/bit${file}.bmp`));
+    const decoded = bmp.decode(buff);
+
+    decoded.bitPP = bitPP;
+
+    const encoded = bmp.encode(decoded).data;
+
+    expect(checksum(buff.toString())).toBe(checksum(encoded.toString()));
+  };
+
+  test('1-bit', compareDecodeEncode(1));
+  test('4-bit', compareDecodeEncode(4));
+  test('8-bit', compareDecodeEncode(8));
+  test('16-bit', compareDecodeEncode(16, '16_x555'));
+  test('24-bit', compareDecodeEncode(24));
+  test('32-bit', compareDecodeEncode(32));
 });
