@@ -26,7 +26,6 @@
   },
   "devDependencies": {
     "@types/jest": "^23.3.5",
-    "crypto": "^1.0.1",
     "husky": "^1.1.2",
     "jest": "^23.6.0",
     "lint-staged": "^7.3.0",
