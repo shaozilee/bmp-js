@@ -1,8 +1,8 @@
 import BmpDecoder from './decoder';
 import BmpEncoder from './encoder';
-import { IImage } from './types';
 
 export default {
-  decode: (bmpData: Buffer) => new BmpDecoder(bmpData),
+  decode: (bmpData: Buffer, options?: IDecoderOptions) =>
+    new BmpDecoder(bmpData, options),
   encode: (imgData: IImage) => new BmpEncoder(imgData)
 };

@@ -1,5 +1,5 @@
+import HeaderTypes from './header-types';
 import maskColor from './mask-color';
-import { Compression, HeaderTypes, IColor, IImage } from './types';
 
 type IColorProcessor = (x: number, line: number) => void;
 
@@ -45,7 +45,7 @@ export default class BmpDecoder implements IImage {
   private shiftBlue!: (x: number) => number;
   private shiftAlpha!: (x: number) => number;
 
-  constructor(buffer: Buffer, toRGBA = false) {
+  constructor(buffer: Buffer, { toRGBA }: IDecoderOptions = { toRGBA: false }) {
     this.buffer = buffer;
     this.toRGBA = !!toRGBA;
     this.pos = 0;
@@ -65,7 +65,7 @@ export default class BmpDecoder implements IImage {
     this.parseRGBA();
   }
 
-  public parseHeader() {
+  private parseHeader() {
     this.fileSize = this.readUInt32LE();
 
     this.reserved1 = this.buffer.readUInt16LE(this.pos);
@@ -186,7 +186,7 @@ export default class BmpDecoder implements IImage {
     this.shiftAlpha = coloShift.shiftAlpha;
   }
 
-  public parseRGBA() {
+  private parseRGBA() {
     this.data = Buffer.alloc(this.width * this.height * 4);
 
     switch (this.bitPP) {
@@ -210,7 +210,7 @@ export default class BmpDecoder implements IImage {
     }
   }
 
-  public bit1() {
+  private bit1() {
     const xLen = Math.ceil(this.width / 8);
     const mode = xLen % 4;
     const padding = mode !== 0 ? 4 - mode : 0;
@@ -240,7 +240,7 @@ export default class BmpDecoder implements IImage {
     });
   }
 
-  public bit4() {
+  private bit4() {
     if (this.compression === Compression.BI_RLE4) {
       this.data.fill(0);
 
@@ -339,7 +339,7 @@ export default class BmpDecoder implements IImage {
     }
   }
 
-  public bit8() {
+  private bit8() {
     if (this.compression === Compression.BI_RLE8) {
       this.data.fill(0);
 
@@ -415,7 +415,7 @@ export default class BmpDecoder implements IImage {
     }
   }
 
-  public bit16() {
+  private bit16() {
     const padding = (this.width % 2) * 2;
 
     this.scanImage(padding, this.width, (x, line) => {
@@ -430,7 +430,7 @@ export default class BmpDecoder implements IImage {
     });
   }
 
-  public bit24() {
+  private bit24() {
     const padding = this.width % 4;
 
     this.scanImage(padding, this.width, (x, line) => {
@@ -446,7 +446,7 @@ export default class BmpDecoder implements IImage {
     });
   }
 
-  public bit32() {
+  private bit32() {
     this.scanImage(0, this.width, (x, line) => {
       const loc = line * this.width * 4 + x * 4;
       const px = this.readUInt32LE();
@@ -456,10 +456,6 @@ export default class BmpDecoder implements IImage {
       this.data[loc + this.locBlue] = this.shiftBlue(px);
       this.data[loc + this.locAlpha] = this.shiftAlpha(px);
     });
-  }
-
-  public getData() {
-    return this.data;
   }
 
   private scanImage(

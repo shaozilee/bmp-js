@@ -25,7 +25,14 @@
   dependencies:
     any-observable "^0.3.0"
 
-"@types/jest@^23.3.5":
+"@types/jest-image-snapshot@^2.4.0":
+  version "2.4.0"
+  resolved "https://artifact.intuit.com:443/artifactory/api/npm/npm-intuit/@types/jest-image-snapshot/-/jest-image-snapshot-2.4.0.tgz#fbc79f5e3e7e5e7b8e92198fbcf2234284f1929c"
+  integrity sha1-+8efXj5+XnuOkhmPvPIjQoTxkpw=
+  dependencies:
+    "@types/jest" "*"
+
+"@types/jest@*", "@types/jest@^23.3.5":
   version "23.3.5"
   resolved "https://artifact.intuit.com:443/artifactory/api/npm/npm-intuit/@types/jest/-/jest-23.3.5.tgz#870a1434208b60603745bfd214fc3fc675142364"
   integrity sha1-hwoUNCCLYGA3Rb/SFPw/xnUUI2Q=
@@ -1241,6 +1248,11 @@ get-own-enumerable-property-symbols@^2.0.1:
   resolved "https://artifact.intuit.com:443/artifactory/api/npm/npm-intuit/get-own-enumerable-property-symbols/-/get-own-enumerable-property-symbols-2.0.1.tgz#5c4ad87f2834c4b9b4e84549dc1e0650fb38c24b"
   integrity sha1-XErYfyg0xLm06EVJ3B4GUPs4wks=
 
+get-stdin@^5.0.1:
+  version "5.0.1"
+  resolved "https://artifact.intuit.com:443/artifactory/api/npm/npm-intuit/get-stdin/-/get-stdin-5.0.1.tgz#122e161591e21ff4c52530305693f20e6393a398"
+  integrity sha1-Ei4WFZHiH/TFJTAwVpPyDmOTo5g=
+
 get-stdin@^6.0.0:
   version "6.0.0"
   resolved "https://artifact.intuit.com:443/artifactory/api/npm/npm-intuit/get-stdin/-/get-stdin-6.0.0.tgz#9e09bf712b360ab9225e812048f71fde9c89657b"
@@ -1976,6 +1988,19 @@ jest-haste-map@^23.6.0:
     jest-worker "^23.2.0"
     micromatch "^2.3.11"
     sane "^2.0.0"
+
+jest-image-snapshot@^2.5.0:
+  version "2.5.0"
+  resolved "https://artifact.intuit.com:443/artifactory/api/npm/npm-intuit/jest-image-snapshot/-/jest-image-snapshot-2.5.0.tgz#bb9fbe932a0daa58baf861ab8d7f23a2072dd9e0"
+  integrity sha1-u5++kyoNqli6+GGrjX8jogct2eA=
+  dependencies:
+    chalk "^1.1.3"
+    get-stdin "^5.0.1"
+    lodash "^4.17.4"
+    mkdirp "^0.5.1"
+    pixelmatch "^4.0.2"
+    pngjs "^3.3.3"
+    rimraf "^2.6.2"
 
 jest-jasmine2@^23.6.0:
   version "23.6.0"
@@ -3043,6 +3068,13 @@ pinkie@^2.0.0:
   resolved "https://artifact.intuit.com:443/artifactory/api/npm/npm-intuit/pinkie/-/pinkie-2.0.4.tgz#72556b80cfa0d48a974e80e77248e80ed4f7f870"
   integrity sha1-clVrgM+g1IqXToDnckjoDtT3+HA=
 
+pixelmatch@^4.0.2:
+  version "4.0.2"
+  resolved "https://artifact.intuit.com:443/artifactory/api/npm/npm-intuit/pixelmatch/-/pixelmatch-4.0.2.tgz#8f47dcec5011b477b67db03c243bc1f3085e8854"
+  integrity sha1-j0fc7FARtHe2fbA8JDvB8wheiFQ=
+  dependencies:
+    pngjs "^3.0.0"
+
 pkg-dir@^2.0.0:
   version "2.0.0"
   resolved "https://artifact.intuit.com:443/artifactory/api/npm/npm-intuit/pkg-dir/-/pkg-dir-2.0.0.tgz#f6d5d1109e19d63edf428e0bd57e12777615334b"
@@ -3068,6 +3100,11 @@ pn@^1.1.0:
   version "1.1.0"
   resolved "https://artifact.intuit.com:443/artifactory/api/npm/npm-intuit/pn/-/pn-1.1.0.tgz#e2f4cef0e219f463c179ab37463e4e1ecdccbafb"
   integrity sha1-4vTO8OIZ9GPBeas3Rj5OHs3Muvs=
+
+pngjs@^3.0.0, pngjs@^3.3.3:
+  version "3.3.3"
+  resolved "https://artifact.intuit.com:443/artifactory/api/npm/npm-intuit/pngjs/-/pngjs-3.3.3.tgz#85173703bde3edac8998757b96e5821d0966a21b"
+  integrity sha1-hRc3A73j7ayJmHV7luWCHQlmohs=
 
 posix-character-classes@^0.1.0:
   version "0.1.1"
@@ -3341,7 +3378,7 @@ ret@~0.1.10:
   resolved "https://artifact.intuit.com:443/artifactory/api/npm/npm-intuit/ret/-/ret-0.1.15.tgz#b8a4825d5bdb1fc3f6f53c2bc33f81388681c7bc"
   integrity sha1-uKSCXVvbH8P29Twrwz+BOIaBx7w=
 
-rimraf@^2.5.4, rimraf@^2.6.1:
+rimraf@^2.5.4, rimraf@^2.6.1, rimraf@^2.6.2:
   version "2.6.2"
   resolved "https://artifact.intuit.com:443/artifactory/api/npm/npm-intuit/rimraf/-/rimraf-2.6.2.tgz#2ed8150d24a16ea8651e6d6ef0f47c4158ce7a36"
   integrity sha1-LtgVDSShbqhlHm1u8PR8QVjOejY=
