@@ -25,7 +25,7 @@ const bmpBuffer = fs.readFileSync('bit24.bmp');
 const bmpData = bmp.decode(bmpBuffer);
 ```
 
-### Options
+#### Options
 
 - toRGBA - switching the output to big endian RGBA, making it compatible with other libraries, like `pngjs`
 
