@@ -60,7 +60,7 @@ export default class BmpEncoder implements IImage {
     );
     this.palette = imgData.palette || [];
 
-    if (this.colors) {
+    if (this.colors && this.bitPP < 16) {
       this.offset += this.colors * 4;
     }
 

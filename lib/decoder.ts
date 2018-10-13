@@ -168,6 +168,7 @@ export default class BmpDecoder implements IImage {
 
     // End of color table
 
+    // Can the height ever be negative?
     if (this.height < 0) {
       this.height *= -1;
       this.bottomUp = false;
