@@ -39,7 +39,7 @@ const bmpData = bmp.decode(bmpBuffer, { toRGBA: true });
 
 #### Supported Compression Methods
 
-Currently only compression is supported in decoding. The following methods are supported:
+Currently only compression is supported during decoding. The following methods are supported:
 
 - NONE - Most common
 - BI_RLE8 - Can be used only with 8-bit/pixel bitmap
