@@ -29,7 +29,7 @@ const bmpData = bmp.decode(bmpBuffer);
 
 #### Options
 
-- toRGBA - switch the output to big endian RGBA, making it compatible with other libraries, like `pngjs`
+- toRGBA - switch the output to big endian RGBA, making it compatible with other libraries like `pngjs`
 
 ```js
 const bmp = require('bmp-ts').default;
