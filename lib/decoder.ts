@@ -29,7 +29,7 @@ export default class BmpDecoder implements IImage {
   private maskBlue!: number;
   private maskAlpha!: number;
 
-  private toRGBA: boolean;
+  private readonly toRGBA: boolean;
 
   private pos: number;
   private bottomUp: boolean;
