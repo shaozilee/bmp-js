@@ -1,0 +1,98 @@
+version: 2
+
+defaults: &defaults
+  working_directory: ~/bmp-ts
+  docker:
+    - image: circleci/node:latest-browsers
+
+jobs:
+  install:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            # Find a cache corresponding to this specific package.json checksum
+            # when this file is changed, this key will fail
+            - bmp-ts-{{ .Branch }}-{{ checksum "yarn.lock" }}-{{ checksum ".circleci/config.yml" }}
+            - bmp-ts-{{ .Branch }}-{{ checksum "yarn.lock" }}
+            - bmp-ts-{{ .Branch }}
+            # Find the most recent cache used from any branch
+            - bmp-ts-master
+            - bmp-ts-
+      - run:
+          name: Install Dependencies
+          command: yarn install --frozen-lockfile
+      - save_cache:
+          key: bmp-ts-{{ .Branch }}-{{ checksum "yarn.lock" }}-{{ checksum ".circleci/config.yml" }}
+          paths:
+            - node_modules
+            - ~/.cache/yarn
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+  lint:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/bmp-ts
+      - run:
+          name: Lint
+          command: yarn lint
+
+  test:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/bmp-ts
+      - run:
+          name: Test
+          command: yarn test
+      - run:
+          name: Send CodeCov Results
+          command: bash <(curl -s https://codecov.io/bash) -t $CODECOV_KEY
+
+  build:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/bmp-ts
+      - run:
+          name: Build
+          command: yarn build
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - install:
+          filters:
+            tags:
+              only: /.*/
+
+      - lint:
+          requires:
+            - install
+          filters:
+            tags:
+              only: /.*/
+
+      - test:
+          requires:
+            - install
+          filters:
+            tags:
+              only: /.*/
+
+      - build:
+          requires:
+            - install
+          filters:
+            tags:
+              only: /.*/
