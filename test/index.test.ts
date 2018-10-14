@@ -6,18 +6,17 @@ import bmp from '../lib/';
 
 const createPath = (p: string) => path.join(process.cwd(), p);
 
-const checksum = (str: string, algorithm = 'md5', encoding = 'hex') =>
+const checksum = (str: Buffer, algorithm = 'md5', encoding = 'hex') =>
   crypto
     .createHash(algorithm)
-    .update(str, 'utf8')
+    .update(str.toString(), 'utf8')
     // @ts-ignore
     .digest(encoding);
 
 describe('decode', () => {
   const decodeTest = (bitPP: number | string) => () => {
     const buff = fs.readFileSync(createPath(`./test/images/bit${bitPP}.bmp`));
-    const res = checksum(bmp.decode(buff).data.toString());
-    expect(res).toMatchSnapshot();
+    expect(checksum(bmp.decode(buff).data)).toMatchSnapshot();
   };
 
   test('errors for non bmp files', () => {
@@ -52,7 +51,7 @@ describe('decode', () => {
     test('alpha', decodeTest('32_alpha'));
     test('alpha - toRGBA', () => {
       const buff = fs.readFileSync(createPath('./test/images/bit32_alpha.bmp'));
-      const res = checksum(bmp.decode(buff, { toRGBA: true }).data.toString());
+      const res = checksum(bmp.decode(buff, { toRGBA: true }).data);
       expect(res).toMatchSnapshot();
     });
   });
@@ -65,8 +64,7 @@ describe('encode', () => {
 
     bitmap.bitPP = bitPP;
 
-    const res = checksum(bmp.encode(bitmap).data.toString());
-    expect(res).toMatchSnapshot();
+    expect(checksum(bmp.encode(bitmap).data)).toMatchSnapshot();
   };
 
   test('1-bit', encodeTest(1));
@@ -114,7 +112,7 @@ describe('decode -> encode', () => {
 
     const encoded = bmp.encode(decoded).data;
 
-    expect(checksum(buff.toString())).toBe(checksum(encoded.toString()));
+    expect(checksum(buff)).toBe(checksum(encoded));
   };
 
   test('1-bit', compareDecodeEncode(1));
