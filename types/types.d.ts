@@ -14,7 +14,7 @@ declare interface IColor {
 }
 
 declare interface IDecoderOptions {
-  toRGBA: boolean;
+  toRGBA?: boolean;
 }
 
 declare interface IImage {

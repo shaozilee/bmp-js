@@ -15,9 +15,9 @@ const checksum = (str: Buffer, algorithm = 'md5', encoding = 'hex') =>
     .digest(encoding);
 
 describe('decode', () => {
-  const decodeTest = (bitPP: number | string) => () => {
+  const decodeTest = (bitPP: number | string, options = {}) => () => {
     const buff = readFile(`./test/images/bit${bitPP}.bmp`);
-    const { data } = bmp.decode(buff);
+    const { data } = bmp.decode(buff, options);
     expect(checksum(data)).toMatchSnapshot();
   };
 
@@ -51,11 +51,7 @@ describe('decode', () => {
   describe('32-bit', () => {
     test('normal', decodeTest(32));
     test('alpha', decodeTest('32_alpha'));
-    test('alpha - toRGBA', () => {
-      const buff = readFile('./test/images/bit32_alpha.bmp');
-      const { data } = bmp.decode(buff, { toRGBA: true });
-      expect(checksum(data)).toMatchSnapshot();
-    });
+    test('alpha - toRGBA', decodeTest('32_alpha', { toRGBA: true }));
   });
 });
 
@@ -70,31 +66,24 @@ describe('encode', () => {
     expect(checksum(data)).toMatchSnapshot();
   };
 
+  const errorTest = (bitPP: number) => () => {
+    const buff = readFile('./test/images/bit32.bmp');
+    const bitmap = bmp.decode(buff);
+
+    bitmap.bitPP = bitPP;
+
+    expect(() => bmp.encode(bitmap)).toThrow();
+  };
+
   test('1-bit', encodeTest(1));
 
   describe('4-bit', () => {
-    test('errors without color pallette', () => {
-      const buff = readFile('./test/images/bit32.bmp');
-      const bitmap = bmp.decode(buff);
-
-      bitmap.bitPP = 4;
-
-      expect(() => bmp.encode(bitmap)).toThrow();
-    });
-
+    test('errors without color pallette', errorTest(4));
     test('works when colors provided', encodeTest(4, 4));
   });
 
   describe('8-bit', () => {
-    test('errors without color pallette', () => {
-      const buff = readFile('./test/images/bit32.bmp');
-      const bitmap = bmp.decode(buff);
-
-      bitmap.bitPP = 8;
-
-      expect(() => bmp.encode(bitmap)).toThrow();
-    });
-
+    test('errors without color pallette', errorTest(8));
     test('works when colors provided', encodeTest(8, 8));
   });
 
