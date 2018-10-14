@@ -5,7 +5,7 @@
   <p>A pure typescript <code>bmp</code> encoder and decoder.</p>
 </div
 
-[![CircleCI](https://img.shields.io/circleci/project/github/hipstersmoothie/bmp-js/master.svg?style=for-the-badge)](https://circleci.com/gh/hipstersmoothie/bmp-js) [![Codecov](https://img.shields.io/codecov/c/github/intuit/ignite.svg?style=for-the-badge)](https://codecov.io/gh/hipstersmoothie/bmp-js) [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=for-the-badge)](https://github.com/prettier/prettier)
+[![CircleCI](https://img.shields.io/circleci/project/github/hipstersmoothie/bmp-js/master.svg?style=for-the-badge)](https://circleci.com/gh/hipstersmoothie/bmp-js) [![Codecov](https://img.shields.io/codecov/c/github/hipstersmoothie/bmp-js.svg?style=for-the-badge)](https://codecov.io/gh/hipstersmoothie/bmp-js) [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=for-the-badge)](https://github.com/prettier/prettier)
 
 Supports decoding and encoding in all bit depths (1, 4, 8, 16, 24, 32).
 
