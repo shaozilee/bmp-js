@@ -62,6 +62,8 @@ export default class BmpEncoder implements IImage {
 
     if (this.colors && this.bitPP < 16) {
       this.offset += this.colors * 4;
+    } else {
+      this.colors = 0;
     }
 
     switch (this.bitPP) {
@@ -92,7 +94,7 @@ export default class BmpEncoder implements IImage {
     // Why 2?
     this.rawSize = this.height * rowBytes * 4 + 2;
     this.fileSize = this.rawSize + this.offset;
-    this.data = Buffer.alloc(this.fileSize);
+    this.data = Buffer.alloc(this.fileSize, 0x1);
     this.pos = 0;
 
     this.encode();
@@ -130,11 +132,8 @@ export default class BmpEncoder implements IImage {
 
     this.writeUInt32LE(this.fileSize);
 
-    this.buffer.writeUInt16LE(this.reserved1, 0);
-    this.pos += 2;
-
-    this.buffer.writeUInt16LE(this.reserved2, 2);
-    this.pos += 2;
+    // Writing 2 UInt16LE resulted in a weird bug
+    this.writeUInt32LE((this.reserved1 << 16) | this.reserved2);
 
     this.writeUInt32LE(this.offset);
     this.writeUInt32LE(this.headerSize);
@@ -168,8 +167,9 @@ export default class BmpEncoder implements IImage {
     let lineArr: number[] = [];
 
     this.writeImage((p, index, x) => {
-      let i = index + 1;
+      let i = index;
 
+      i++;
       const b = this.buffer[i++];
       const g = this.buffer[i++];
       const r = this.buffer[i++];
