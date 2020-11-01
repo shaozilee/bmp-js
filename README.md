@@ -51,7 +51,7 @@ var bmpData = {
     height //Number
 };
 var rawData = bmp.encode(bmpData); //defaults to no compression
-fs.WriteFileSync('./image.bmp', rawData.data);
+fs.writeFileSync('./image.bmp', rawData.data);
 ```
 
 ### License
